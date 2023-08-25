@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "mo"
+version = "0.1.0"
+description = "MO: Methodically organize CourseKata Data."
+authors = ["Adam Blake <adam@ablake.dev>"]
+license = "GPL-3.0-or-greater"
+readme = "README.md"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+mo = "mo.cli.main:app"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+ruff = "^0.0.285"
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
