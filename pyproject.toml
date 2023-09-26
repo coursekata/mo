@@ -15,6 +15,7 @@ mo = "mo.cli.main:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+pydantic = "^2.3.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
