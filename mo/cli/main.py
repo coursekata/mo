@@ -9,6 +9,7 @@ from rich import print
 from mo.cli.logging import configure_logging
 from mo.core.check.manifest import ManifestChecker
 from mo.core.organize.data import DataOrganizer
+from mo.core.typing import InstitutionType
 
 app = typer.Typer()
 
@@ -55,6 +56,9 @@ def organize(
 def check(
     data: Annotated[Path, typer.Argument()],
     manifest: Annotated[Optional[Path], typer.Option("--manifest", "-m")] = None,
+    institution_type: Annotated[
+        Optional[list[InstitutionType]], typer.Option("--institution-type", "-i")
+    ] = None,
 ) -> None:
     """Check that data has been downloaded for all classes in the manifest."""
     manifest = Path(data, "manifest.csv") if not manifest else Path(manifest)
