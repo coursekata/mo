@@ -13,7 +13,7 @@ from mo.core.writers import ParquetWriter
 
 
 class ClassesOrganizer(BaseOrganizer):
-    """Organize item response information."""
+    """Organize class metadata."""
 
     name = "classes"
 

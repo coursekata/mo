@@ -7,7 +7,7 @@ from mo.core.writers import ParquetWriter
 
 
 class MediaViewsOrganizer(BaseOrganizer):
-    """Organize item response information."""
+    """Organize media viewing information."""
 
     name = "media_views"
 

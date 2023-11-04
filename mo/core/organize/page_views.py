@@ -9,7 +9,7 @@ from mo.core.writers import ParquetWriter
 
 
 class PageViewsOrganizer(BaseOrganizer):
-    """Organize item response information."""
+    """Organize page viewing information."""
 
     name = "page_views"
 
