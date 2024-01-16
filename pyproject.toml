@@ -16,6 +16,8 @@ mo = "mo.cli.main:app"
 [tool.poetry.dependencies]
 python = "^3.11"
 pydantic = "^2.3.0"
+rich = "^13.7.0"
+typer = "^0.9.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.13"
