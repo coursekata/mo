@@ -18,8 +18,33 @@ python = "^3.11"
 pydantic = "^2.3.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.7.0"
 ruff = "^0.0.285"
+
+## Formatting and Linting
+[tool.ruff]
+line-length = 100
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
+"packages/ckhub/tests/**/conftest.py" = ["F401", "F403"]
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+preview = true
+
+[tool.ruff.isort]
+known-first-party = ["dev", "ckhub", "tests"]
+split-on-trailing-comma = false
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle
+  "F",   # Pyflakes
+  "B",   # flake8-bugbear
+  "SIM", # flake8-simplify
+  "I",   # isort
+  "UP",  # pyupgrade
+]
+
+[tool.ruff.extend-per-file-ignores]
+"**/__init__.py" = ["F401"]
