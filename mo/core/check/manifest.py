@@ -1,6 +1,5 @@
 """Check that data has been downloaded for all completed classes in the manifest."""
 
-
 from typing import Optional
 
 import polars as pl
@@ -9,12 +8,14 @@ from mo.core.interfaces import IReader
 from mo.core.read.classes import ManifestReader
 from mo.core.typing import InstitutionType, PathStr
 
+manifest_reader: IReader = ManifestReader()
+
 
 class ManifestChecker:
     def __init__(
         self,
         institution_type: Optional[list[InstitutionType]] = None,
-        manifest_reader: IReader = ManifestReader(),
+        manifest_reader: IReader = manifest_reader,
     ) -> None:
         self.manifest_reader = manifest_reader
         self.institution_type = institution_type

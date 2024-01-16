@@ -30,10 +30,7 @@ class ResponsesReader(IReader):
         try:
             return (
                 pl.scan_csv(
-                    input,
-                    dtypes=dtypes.responses,
-                    raise_if_empty=False,
-                    ignore_errors=True,
+                    input, dtypes=dtypes.responses, raise_if_empty=False, ignore_errors=True
                 )
                 .filter(pl.col("class_id").is_not_null())
                 .filter(pl.col("student_id").is_not_null())
@@ -50,10 +47,7 @@ class ResponsesReader(IReader):
     def map_multiple_choice(responses_df: FrameType) -> pl.LazyFrame:
         """Map multiple-choice responses to their corresponding values."""
         df = responses_df.lazy()
-        if (
-            "lrn_type" not in responses_df.columns
-            or "response" not in responses_df.columns
-        ):
+        if "lrn_type" not in responses_df.columns or "response" not in responses_df.columns:
             return df
 
         ref = "lrn_question_reference"
@@ -79,9 +73,7 @@ class ResponsesReader(IReader):
         )
 
         mapped_mcq = (
-            mcq_responses.drop(ref)
-            .join(mcq_map, on="ref_opt", how="left")
-            .select(df.columns)
+            mcq_responses.drop(ref).join(mcq_map, on="ref_opt", how="left").select(df.columns)
         )
 
         return pl.concat([mapped_mcq, df.filter(pl.col("lrn_type") != "mcq")])

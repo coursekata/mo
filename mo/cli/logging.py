@@ -23,7 +23,5 @@ class TyperLoggerHandler(logging.Handler):
 def configure_logging(level: int = logging.INFO):
     typer_handler = TyperLoggerHandler()
     logging.basicConfig(
-        level=level,
-        handlers=(typer_handler,),
-        format="[%(levelname)-.1s] %(message)s",
+        level=level, handlers=(typer_handler,), format="[%(levelname)-.1s] %(message)s"
     )

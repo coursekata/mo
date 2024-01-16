@@ -7,6 +7,9 @@ from mo.core.organize.base import BaseOrganizer
 from mo.core.read.page_views import PageViewsReader
 from mo.core.writers import ParquetWriter
 
+parquet_writer = ParquetWriter()
+page_views_reader = PageViewsReader()
+
 
 class PageViewsOrganizer(BaseOrganizer):
     """Organize page viewing information."""
@@ -15,8 +18,8 @@ class PageViewsOrganizer(BaseOrganizer):
 
     def __init__(
         self,
-        writer: IWriter = ParquetWriter(),
-        reader: IReader = PageViewsReader(),
+        writer: IWriter = parquet_writer,
+        reader: IReader = page_views_reader,
         long_format: bool = False,
     ) -> None:
         """Initialize a PageViewsOrganizer."""
@@ -28,13 +31,7 @@ class PageViewsOrganizer(BaseOrganizer):
         if not self.long_format:
             return df
 
-        drop_from_long = [
-            "engaged",
-            "idle_brief",
-            "idle_long",
-            "off_page_brief",
-            "off_page_long",
-        ]
+        drop_from_long = ["engaged", "idle_brief", "idle_long", "off_page_brief", "off_page_long"]
 
         # extract tried_again_dt to rows that can be appended
         tried_again_rows = (
@@ -56,9 +53,7 @@ class PageViewsOrganizer(BaseOrganizer):
                 .then("[]")
                 .otherwise(pl.col("trace"))
             )
-            .with_columns(
-                trace=pl.col("trace").str.json_extract(dtype=pl.List(_trace_item))
-            )
+            .with_columns(trace=pl.col("trace").str.json_extract(dtype=pl.List(_trace_item)))
             .explode("trace")
             .unnest("trace")
             # re-name/order the columns so that we can vstack
@@ -69,9 +64,4 @@ class PageViewsOrganizer(BaseOrganizer):
         return pl.concat([exploded_trace, tried_again_rows])
 
 
-_trace_item = pl.Struct(
-    [
-        pl.Field("timestamp", pl.Datetime),
-        pl.Field("switched_to", pl.Utf8),
-    ]
-)
+_trace_item = pl.Struct([pl.Field("timestamp", pl.Datetime), pl.Field("switched_to", pl.Utf8)])

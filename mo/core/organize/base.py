@@ -53,10 +53,7 @@ class BaseOrganizer(IOrganizer, ABC):
             os.rmdir(path)
 
     def __call__(
-        self,
-        input: PathStr | Iterable[PathStr],
-        output_dir: PathStr,
-        keep_source: bool = False,
+        self, input: PathStr | Iterable[PathStr], output_dir: PathStr, keep_source: bool = False
     ) -> pl.LazyFrame:
         """Organize item response information."""
         paths = self.find_paths(input)
@@ -78,10 +75,7 @@ class BaseOrganizer(IOrganizer, ABC):
         return df
 
     def clean_up(
-        self,
-        input: PathStr | Iterable[PathStr],
-        paths: Iterable[Path],
-        output_file: Path,
+        self, input: PathStr | Iterable[PathStr], paths: Iterable[Path], output_file: Path
     ):
         for path in paths:
             if path.is_file() and not path.samefile(output_file):

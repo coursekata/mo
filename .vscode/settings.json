@@ -1,11 +1,12 @@
 {
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.codeActionsOnSave": {
-      "source.fixAll": true
+      "source.organizeImports": "explicit"
     },
-    "editor.rulers": [88]
+    "editor.indentSize": 4,
+    "editor.rulers": [100]
   },
   "python.analysis.diagnosticSeverityOverrides": {
     "reportUnusedImport": "none",

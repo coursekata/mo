@@ -26,10 +26,7 @@ class DataOrganizer:
     responses_organizer = ResponsesOrganizer()
 
     def __call__(
-        self,
-        input: PathStr | Iterable[PathStr],
-        output_dir: PathStr,
-        keep_source: bool = False,
+        self, input: PathStr | Iterable[PathStr], output_dir: PathStr, keep_source: bool = False
     ) -> MOData:
         """Organize all data."""
         return MOData(

@@ -39,10 +39,7 @@ class IOrganizer(Protocol):
 
     @abstractmethod
     def __call__(
-        self,
-        input: PathStr | Iterable[PathStr],
-        output_dir: PathStr,
-        keep_source: bool = False,
+        self, input: PathStr | Iterable[PathStr], output_dir: PathStr, keep_source: bool = False
     ) -> pl.LazyFrame:
         """Organize a data type from many CSVs to a single file."""
         pass

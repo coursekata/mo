@@ -11,6 +11,10 @@ from mo.core.organize.base import BaseOrganizer
 from mo.core.read.classes import ClassesReader, ManifestReader
 from mo.core.writers import ParquetWriter
 
+parquet_writer = ParquetWriter()
+classes_reader = ClassesReader()
+manifest_reader = ManifestReader()
+
 
 class ClassesOrganizer(BaseOrganizer):
     """Organize class metadata."""
@@ -19,9 +23,9 @@ class ClassesOrganizer(BaseOrganizer):
 
     def __init__(
         self,
-        writer: IWriter = ParquetWriter(),
-        reader: IReader = ClassesReader(),
-        manifest_reader: IReader = ManifestReader(),
+        writer: IWriter = parquet_writer,
+        reader: IReader = classes_reader,
+        manifest_reader: IReader = manifest_reader,
     ) -> None:
         """Initialize a ClassesOrganizer."""
         self.reader = reader

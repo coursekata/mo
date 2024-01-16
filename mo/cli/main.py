@@ -33,7 +33,7 @@ def organize(
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation")] = False,
 ) -> None:
     """Organize your data."""
-    output = input if not output else output
+    output = output if output else input
 
     if not keep_source and not yes:
         warn_msg = (
