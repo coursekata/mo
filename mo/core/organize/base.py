@@ -1,6 +1,5 @@
 """Base class for organizing data."""
 
-
 import os
 from abc import ABC
 from pathlib import Path
@@ -55,7 +54,7 @@ class BaseOrganizer(IOrganizer, ABC):
     def __call__(
         self, input: PathStr | Iterable[PathStr], output_dir: PathStr, keep_source: bool = False
     ) -> pl.LazyFrame:
-        """Organize item response information."""
+        """Organize data."""
         paths = self.find_paths(input)
         output_file = Path(output_dir) / f"{self.name}.parquet"
         df = self.merge(paths)
