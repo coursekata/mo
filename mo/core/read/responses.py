@@ -36,6 +36,12 @@ class ResponsesReader(IReader):
                     raise_if_empty=False,
                     ignore_errors=True,
                     null_values=NULL_VALUES,
+                    try_parse_dates=True,
+                )
+                .with_columns(
+                    pl.col("dt_submitted")
+                    .str.to_datetime(format="%Y-%m-%d %H:%M:%S%.f", time_unit="us", time_zone="UTC")
+                    .keep_name()
                 )
                 .filter(pl.col("class_id").is_not_null())
                 .filter(pl.col("student_id").is_not_null())
@@ -46,7 +52,9 @@ class ResponsesReader(IReader):
                 .lazy()
             )
         except exceptions.ColumnNotFoundError:
-            return pl.DataFrame(schema=dtypes.responses).lazy()
+            dtypes_responses = dict(dtypes.responses)
+            dtypes_responses.update({"dt_submitted": pl.Datetime("us", "UTC")})
+            return pl.DataFrame(schema=dtypes_responses).lazy()
 
     @staticmethod
     def map_multiple_choice(responses_df: FrameType) -> pl.LazyFrame:

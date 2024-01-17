@@ -1,8 +1,9 @@
 """Data type schemas for the metrics package."""
 
 import polars as pl
+from polars.type_aliases import SchemaDict
 
-manifest = {
+manifest: SchemaDict = {
     "class_id": pl.Utf8,
     "department": pl.Utf8,
     "type": pl.Utf8,
@@ -30,7 +31,7 @@ manifest = {
     "school_district_id": pl.Int64,
 }
 
-metadata = {
+metadata: SchemaDict = {
     "institution_id": pl.Utf8,
     "class_id": pl.Utf8,
     "course_name": pl.Utf8,
@@ -41,7 +42,7 @@ metadata = {
     "setup_yaml": pl.Utf8,
 }
 
-page_views = {
+page_views: SchemaDict = {
     "class_id": pl.Utf8,
     "student_id": pl.Utf8,
     "chapter": pl.Utf8,
@@ -58,7 +59,7 @@ page_views = {
     "trace": pl.Utf8,
 }
 
-responses = {
+responses: SchemaDict = {
     "institution_id": pl.Utf8,
     "class_id": pl.Utf8,
     "course_name": pl.Utf8,
@@ -75,7 +76,7 @@ responses = {
     "prompt": pl.Utf8,
     "points_possible": pl.Int64,
     "points_earned": pl.Int64,
-    "dt_submitted": pl.Datetime("us", "UTC"),
+    "dt_submitted": pl.Utf8,  # post-processed to a date in responses reader; needs special format
     "completes_page": pl.Boolean,
     "attempt": pl.Int64,
     "user_agent": pl.Utf8,
@@ -105,7 +106,7 @@ responses = {
     "lrn_response_api_version": pl.Utf8,
 }
 
-media_views = {
+media_views: SchemaDict = {
     "institution_id": pl.Utf8,
     "class_id": pl.Utf8,
     "student_id": pl.Utf8,
