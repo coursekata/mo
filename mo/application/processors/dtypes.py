@@ -34,10 +34,10 @@ manifest: SchemaDict = {
 metadata: SchemaDict = {
     "institution_id": pl.Utf8,
     "class_id": pl.Utf8,
-    "course_name": pl.Utf8,
-    "release": pl.Utf8,
+    "course_name": pl.Utf8,  # course
+    "release": pl.Utf8,  # version
     "book": pl.Utf8,
-    "teacher_id": pl.Utf8,
+    "teacher_id": pl.Utf8,  # instructor_id
     "lms": pl.Utf8,
     "setup_yaml": pl.Utf8,
 }
@@ -76,7 +76,10 @@ responses: SchemaDict = {
     "prompt": pl.Utf8,
     "points_possible": pl.Int64,
     "points_earned": pl.Int64,
-    "dt_submitted": pl.Utf8,  # post-processed to a date in responses reader; needs special format
+    # dt_submitted has multiple formats, but you can't specify them here
+    # instead, let try_parse_dates infer the correct format
+    # "dt_submitted": pl.Datetime("us", "UTC"),
+    "dt_submitted": pl.Utf8,
     "completes_page": pl.Boolean,
     "attempt": pl.Int64,
     "user_agent": pl.Utf8,

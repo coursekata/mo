@@ -20,8 +20,10 @@ class TyperLoggerHandler(logging.Handler):
         typer.secho(self.format(record), bg=bg, fg=fg)
 
 
-def configure_logging(level: int = logging.INFO):
+def configure_logging(level: int | str = logging.INFO):
     typer_handler = TyperLoggerHandler()
-    logging.basicConfig(
-        level=level, handlers=(typer_handler,), format="[%(levelname)-.1s] %(message)s"
-    )
+    logging.basicConfig(level=level, handlers=(typer_handler,), format=log_format())
+
+
+def log_format() -> str:
+    return "[%(levelname)-.1s] [%(asctime)s %(name)s] %(message)s"

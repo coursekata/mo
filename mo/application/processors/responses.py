@@ -1,20 +1,43 @@
-"""Read item response information."""
+from copy import copy
+from pathlib import Path
+from typing import final
 
 import polars as pl
-from polars import exceptions
-from polars.type_aliases import FrameType as FrameType
+from polars.type_aliases import FrameType
 
-from mo.core import dtypes
-from mo.core.interfaces import IReader
-from mo.core.read.null_values import NULL_VALUES
-from mo.core.typing import PathStr
+from mo.application.processors import dtypes
+from mo.application.processors.base import BaseProcessor
 
 
-class ResponsesReader(IReader):
-    """Read response data from a CSV."""
+@final
+class ResponsesProcessor(BaseProcessor):
+    """Process response data from a CSV."""
 
-    def __call__(self, input: PathStr) -> pl.LazyFrame:
-        exclude = [
+    input_schema = copy(dtypes.responses)
+    output_schema = copy(dtypes.responses)
+
+    def __init__(self):
+        super().__init__()
+        self.output_schema["dt_submitted"] = pl.Datetime(time_unit="us", time_zone="UTC")
+
+    def raw_read(self, input: Path) -> pl.LazyFrame:
+        df = self.exclude_bad_items(super().raw_read(input))
+        # convert the `dt_submitted` column to a datetime
+        if "dt_submitted" in df.columns and df.schema["dt_submitted"] == pl.Utf8():
+            # pre-process datetimes
+            df = df.with_columns(
+                pl.col("dt_submitted")
+                .str.strip()
+                .str.replace(" ", "T")
+                .str.replace(r"\+[0-9]+$", "")
+                .str.to_datetime(time_unit="us", time_zone="UTC")
+                .keep_name()
+            )
+
+        return df
+
+    def exclude_bad_items(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
+        exclusions = [
             "89296286-f21e-4b08-a9db-2232179b27c1",
             "9ae1e478-fc9d-491e-8a61-530158b0406c",
             "a4c99872-8575-43fa-ad48-22ade9eda0ad",
@@ -27,34 +50,18 @@ class ResponsesReader(IReader):
             "e7e9185a-d414-445e-a71a-ced42e596523",
             "b2518c54-e2d3-47ff-a679-3931d2e1c0bb",
         ]
+        return df.lazy().filter(~pl.col("lrn_question_reference").is_in(exclusions))
 
-        try:
-            return (
-                pl.scan_csv(
-                    input,
-                    dtypes=dtypes.responses,
-                    raise_if_empty=False,
-                    ignore_errors=True,
-                    null_values=NULL_VALUES,
-                    try_parse_dates=True,
-                )
-                .with_columns(
-                    pl.col("dt_submitted")
-                    .str.to_datetime(format="%Y-%m-%d %H:%M:%S%.f", time_unit="us", time_zone="UTC")
-                    .keep_name()
-                )
-                .filter(pl.col("class_id").is_not_null())
-                .filter(pl.col("student_id").is_not_null())
-                .filter(pl.col("response").is_not_null())
-                .filter(~pl.col("lrn_question_reference").is_in(exclude))
-                .pipe(self.map_multiple_choice)
-                .collect()
-                .lazy()
-            )
-        except exceptions.ColumnNotFoundError:
-            dtypes_responses = dict(dtypes.responses)
-            dtypes_responses.update({"dt_submitted": pl.Datetime("us", "UTC")})
-            return pl.DataFrame(schema=dtypes_responses).lazy()
+    def clean(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
+        return (
+            self.exclude_bad_items(df)
+            .filter(pl.col("class_id").is_not_null())
+            .filter(pl.col("student_id").is_not_null())
+            .filter(pl.col("response").is_not_null())
+            .pipe(self.map_multiple_choice)
+            .collect()
+            .lazy()
+        )
 
     @staticmethod
     def map_multiple_choice(responses_df: FrameType) -> pl.LazyFrame:
