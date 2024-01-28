@@ -15,6 +15,9 @@ class IProcessor(ABC):
     output_schema: SchemaDict
     """The Polars schema for the cleaned data."""
 
+    exclude_columns: list[str]
+    """Columns to exclude when reading data in."""
+
     @abstractmethod
     def read(self, input: Path) -> pl.LazyFrame:
         """Read and clean the data file."""

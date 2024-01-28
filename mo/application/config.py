@@ -31,3 +31,6 @@ class CommonConfig(BaseModel):
 
     log_file: FilePath | None = None
     "Path to a file where logs should be written. Default is not to write to a file."
+
+    exclude_columns: list[str] = []
+    "Columns to exclude when reading data in."

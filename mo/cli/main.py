@@ -36,6 +36,7 @@ def setup_config(
     dry_run: bool,
     log_file: Path | None,
     verbose: bool,
+    exclude_columns: list[str] | None,
 ) -> OrganizeConfig:
     config = OrganizeConfig(inputs=inputs, output=output)
     if remove:
@@ -50,6 +51,8 @@ def setup_config(
         config.log_file = log_file
     if verbose:
         config.log_level = LogLevel.debug
+    if exclude_columns:
+        config.exclude_columns += exclude_columns
     configure_logging(config.log_level)
     return config
 
@@ -108,9 +111,20 @@ def organize(
             "--verbose", "-v", help="Show all debug logs in addition to errors and warnings."
         ),
     ] = False,
+    exclude_columns: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--exclude-columns",
+            "-e",
+            help="Columns to exclude when reading the data.",
+            show_default=False,
+        ),
+    ] = None,
 ) -> None:
     """Organize your CSV download bundles."""
-    config = setup_config(inputs, output, remove, merge, keep_pii, dry_run, log_file, verbose)
+    config = setup_config(
+        inputs, output, remove, merge, keep_pii, dry_run, log_file, verbose, exclude_columns
+    )
     organizers = setup_organizers(config)
     try:
         Organize(config, organizers).execute()
@@ -159,9 +173,20 @@ def consolidate(
             "--verbose", "-v", help="Show all debug logs in addition to errors and warnings."
         ),
     ] = False,
+    exclude_columns: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--exclude-columns",
+            "-e",
+            help="Columns to exclude when reading the data.",
+            show_default=False,
+        ),
+    ] = None,
 ) -> None:
     """Consolidate and compress your CSV download bundles to parquet."""
-    config = setup_config(inputs, output, remove, merge, keep_pii, dry_run, log_file, verbose)
+    config = setup_config(
+        inputs, output, remove, merge, keep_pii, dry_run, log_file, verbose, exclude_columns
+    )
     organizers = setup_organizers(config)
     try:
         Consolidate(config, organizers).execute()

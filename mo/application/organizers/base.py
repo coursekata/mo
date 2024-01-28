@@ -108,7 +108,8 @@ class BaseDataFileOrganizer(BaseOrganizer):
     def __init__(self, config: OrganizeConfig, pattern: str | Collection[str] | None = None):
         super().__init__(config, pattern)
         if not self.processor:
-            raise ValueError("`pattern`, `data_type`, and `reader` must be set")
+            raise ValueError("`processor` must be set")
+        self.processor.exclude_columns = self.config.exclude_columns
 
 
 class ClassDataFileOrganizer(ClassFileOrganizer, BaseDataFileOrganizer):

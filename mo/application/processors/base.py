@@ -11,15 +11,23 @@ from mo.application.interfaces.processor import IProcessor
 
 
 class BaseProcessor(IProcessor):
-    def __init__(self):
+    def __init__(self, exclude_columns: list[str] | None = None):
         self.log = logging.getLogger(self.__class__.__name__)
+        self.exclude_columns = exclude_columns or []
         if not self.input_schema:
             raise ValueError("`input_schema` must be set")
         if not self.output_schema:
             self.output_schema = self.input_schema
         # make sure we don't modify the original schema
-        self.input_schema = copy.copy(self.input_schema)
-        self.output_schema = copy.copy(self.output_schema)
+        # convert to dict to be able to delete columns
+        self.input_schema = dict(copy.copy(self.input_schema))
+        self.output_schema = dict(copy.copy(self.output_schema))
+        # remove excluded columns
+        for column in self.exclude_columns:
+            if column in self.input_schema:
+                del self.input_schema[column]
+            if column in self.output_schema:
+                del self.output_schema[column]
 
     def read(self, input: Path) -> pl.LazyFrame:
         return self.clean(self.raw_read(input))
@@ -27,9 +35,9 @@ class BaseProcessor(IProcessor):
     def raw_read(self, input: Path) -> pl.LazyFrame:
         try:
             self.log.debug(f"Reading {input}")
-            return pl.read_csv(
+            return pl.scan_csv(
                 input, dtypes=self.input_schema, null_values=NULL_VALUES, try_parse_dates=True
-            ).lazy()
+            ).drop(*self.exclude_columns)
         except exceptions.NoDataError:
             return self.template_df()
 
