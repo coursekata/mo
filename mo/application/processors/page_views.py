@@ -1,4 +1,3 @@
-from copy import copy
 from typing import final
 
 import polars as pl
@@ -11,8 +10,8 @@ from mo.application.processors.base import BaseProcessor
 class PageViewsProcessor(BaseProcessor):
     """Process page view data from a CSV."""
 
-    input_schema = copy(dtypes.page_views)
-    output_schema = copy(dtypes.page_views)
+    input_schema = dtypes.page_views
+    output_schema = dtypes.page_views
 
     def clean(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
         return (

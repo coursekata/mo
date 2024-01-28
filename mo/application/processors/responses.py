@@ -1,4 +1,3 @@
-from copy import copy
 from pathlib import Path
 from typing import final
 
@@ -13,8 +12,8 @@ from mo.application.processors.base import BaseProcessor
 class ResponsesProcessor(BaseProcessor):
     """Process response data from a CSV."""
 
-    input_schema = copy(dtypes.responses)
-    output_schema = copy(dtypes.responses)
+    input_schema = dtypes.responses
+    output_schema = dtypes.responses
 
     def __init__(self):
         super().__init__()

@@ -1,3 +1,4 @@
+import copy
 import logging
 from pathlib import Path
 from typing import Iterable, Literal
@@ -16,6 +17,9 @@ class BaseProcessor(IProcessor):
             raise ValueError("`input_schema` must be set")
         if not self.output_schema:
             self.output_schema = self.input_schema
+        # make sure we don't modify the original schema
+        self.input_schema = copy.copy(self.input_schema)
+        self.output_schema = copy.copy(self.output_schema)
 
     def read(self, input: Path) -> pl.LazyFrame:
         return self.clean(self.raw_read(input))

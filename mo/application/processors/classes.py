@@ -1,4 +1,3 @@
-from copy import copy
 from typing import final
 
 import polars as pl
@@ -11,8 +10,8 @@ from mo.application.processors.base import BaseProcessor
 class ClassesProcessor(BaseProcessor):
     """Process class metadata from a CSV."""
 
-    input_schema = copy(dtypes.metadata)
-    output_schema = copy(dtypes.manifest)
+    input_schema = dtypes.metadata
+    output_schema = dtypes.manifest
 
     def clean(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
         rename_map = {

@@ -1,4 +1,3 @@
-from copy import copy
 from typing import final
 
 import polars as pl
@@ -11,8 +10,8 @@ from mo.application.processors.base import BaseProcessor
 class MediaViewsProcessor(BaseProcessor):
     """Process media view data from a CSV."""
 
-    input_schema = copy(dtypes.media_views)
-    output_schema = copy(dtypes.media_views)
+    input_schema = dtypes.media_views
+    output_schema = dtypes.media_views
 
     def __init__(self):
         super().__init__()
