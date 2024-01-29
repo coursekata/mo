@@ -35,9 +35,12 @@ class BaseProcessor(IProcessor):
     def raw_read(self, input: Path) -> pl.LazyFrame:
         try:
             self.log.debug(f"Reading {input}")
-            return pl.scan_csv(
+            df = pl.scan_csv(
                 input, dtypes=self.input_schema, null_values=NULL_VALUES, try_parse_dates=True
-            ).drop(*self.exclude_columns)
+            )
+            if self.exclude_columns:
+                df = df.drop(*self.exclude_columns)
+            return df
         except exceptions.NoDataError:
             return self.template_df()
 
