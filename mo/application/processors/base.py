@@ -52,7 +52,7 @@ class BaseProcessor(IProcessor):
         )
 
         for column, dtype in self.output_schema.items():
-            if dtype in df.schema and dtype != df.schema[column]:
+            if column in df.schema and dtype != df.schema[column]:
                 raise ValueError(
                     f"Schema mismatch for `{column}` in {str(input)}:\n"
                     f"  Expected: {dtype}\n"
