@@ -1,9 +1,9 @@
-from enum import StrEnum
+from enum import Enum
 
 from pydantic import BaseModel, FilePath
 
 
-class LogLevel(StrEnum):
+class LogLevel(Enum):
     "The levels of logging that can be used."
 
     debug = "DEBUG"

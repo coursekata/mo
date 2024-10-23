@@ -18,6 +18,7 @@ from mo.application.organizers import (
     TagsOrganizer,
 )
 from mo.application.organizers.items import ItemsOrganizer
+from mo.application.processors.base import BaseProcessor
 from mo.application.processors.classes import ClassesProcessor
 from mo.application.processors.responses import ResponsesProcessor
 from mo.application.use_cases.check import Check
@@ -58,7 +59,7 @@ def setup_config(
         config.log_level = LogLevel.debug
     if exclude_columns:
         config.exclude_columns += exclude_columns
-    configure_logging(config.log_level)
+    configure_logging(config.log_level.value)
     return config
 
 
@@ -238,6 +239,8 @@ def consolidate(
 def check(
     data: Annotated[Path, typer.Argument()],
     manifest: Annotated[Path | None, typer.Option("--manifest", "-m")] = None,
+    include_active: Annotated[bool, typer.Option("--include-active", "-a")] = False,
+    include_test: Annotated[bool, typer.Option("--include-test")] = False,
 ) -> None:
     """Check that data has been downloaded for all classes in the manifest."""
     manifest = Path(data, "manifest.csv") if not manifest else Path(manifest)
@@ -249,16 +252,17 @@ def check(
         datetime.fromtimestamp(manifest.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
     )
 
-    missing = []
-    for data_type, processor in {
+    missing: list[str] = []
+    processors: dict[str, BaseProcessor] = {
         "classes": ClassesProcessor(),
         "responses": ResponsesProcessor(),
-    }.items():
+    }
+    for data_type, processor in processors.items():
         data_file = Path(data, f"{data_type}.parquet")
         if not data_file.exists():
             raise typer.BadParameter(f"{data_type.capitalize()} file not found at {data_file}")
 
-        checker = Check(manifest, data_file, processor)
+        checker = Check(manifest, data_file, processor, include_active, include_test)
         missing_data_type = checker.execute()
         missing += missing_data_type
         if not missing_data_type:

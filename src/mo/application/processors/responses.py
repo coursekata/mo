@@ -21,16 +21,16 @@ class ResponsesProcessor(BaseProcessor):
 
     def raw_read(self, input: Path) -> pl.LazyFrame:
         df = self.exclude_bad_items(super().raw_read(input))
+        df_schema = df.collect_schema()
         # convert the `dt_submitted` column to a datetime
-        if "dt_submitted" in df.columns and df.schema["dt_submitted"] == pl.Utf8():
+        if "dt_submitted" in df.columns and df_schema["dt_submitted"] == pl.Utf8():
             # pre-process datetimes
             df = df.with_columns(
                 pl.col("dt_submitted")
-                .str.strip()
-                .str.replace(" ", "T")
-                .str.replace(r"\+[0-9]+$", "")
-                .str.to_datetime(time_unit="us", time_zone="UTC")
-                .keep_name()
+                .str.strip_chars()
+                .str.replace_all(" ", "T")
+                .str.replace_all(r"\+[0-9]+$", "")
+                .str.strptime(pl.Datetime(time_unit="us", time_zone="UTC"))
             )
 
         return df
@@ -49,14 +49,14 @@ class ResponsesProcessor(BaseProcessor):
             "e7e9185a-d414-445e-a71a-ced42e596523",
             "b2518c54-e2d3-47ff-a679-3931d2e1c0bb",
         ]
-        return df.lazy().filter(~pl.col("lrn_question_reference").is_in(exclusions))
+        return df.lazy().filter(~pl.col("lrn_question_reference").is_in(exclusions))  # type: ignore
 
     def clean(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
         return (
             self.exclude_bad_items(df)
-            .filter(pl.col("class_id").is_not_null())
-            .filter(pl.col("student_id").is_not_null())
-            .filter(pl.col("response").is_not_null())
+            .filter(pl.col("class_id").is_not_null())  # type: ignore
+            .filter(pl.col("student_id").is_not_null())  # type: ignore
+            .filter(pl.col("response").is_not_null())  # type: ignore
             .pipe(self.map_multiple_choice)
             .collect()
             .lazy()
@@ -76,7 +76,7 @@ class ResponsesProcessor(BaseProcessor):
                 response=pl.when(pl.col("response").eq(pl.lit("")))
                 .then("[]")
                 .otherwise(pl.col("response"))
-                .str.json_extract()
+                .str.json_extracts()  # type: ignore
             )
             .explode("response")
             .with_columns(ref_opt=pl.concat_str(ref, pl.lit("lrn_option_"), "response"))

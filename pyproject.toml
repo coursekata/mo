@@ -19,6 +19,7 @@ mo = "mo.cli.main:app"
 
 [tool.uv]
 dev-dependencies = [
+    "pyright[nodejs]>=1.1.386",
     "ruff>=0.7.0",
 ]
 

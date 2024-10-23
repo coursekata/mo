@@ -38,7 +38,7 @@ class BaseProcessor(IProcessor):
             self.log.debug(f"Reading {input}")
             df = pl.scan_csv(
                 input,
-                dtypes=self.input_schema,
+                schema=self.input_schema,
                 null_values=NULL_VALUES,
                 try_parse_dates=True,
             )
@@ -50,17 +50,18 @@ class BaseProcessor(IProcessor):
 
     def read_output(self, input: Path, format: Literal["csv", "parquet"]) -> pl.LazyFrame:
         df = (
-            pl.scan_csv(input, dtypes=self.output_schema, null_values=NULL_VALUES)
+            pl.scan_csv(input, schema=self.output_schema, null_values=NULL_VALUES)
             if format == "csv"
             else pl.scan_parquet(input)
         )
 
         for column, dtype in self.output_schema.items():
-            if column in df.schema and dtype != df.schema[column]:
+            df_schema = df.collect_schema()
+            if column in df_schema and dtype != df_schema[column]:
                 raise ValueError(
                     f"Schema mismatch for `{column}` in {str(input)}:\n"
                     f"  Expected: {dtype}\n"
-                    f"  Actual: {df.schema[column]}"
+                    f"  Actual: {df_schema[column]}"
                 )
 
         return df

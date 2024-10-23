@@ -1,7 +1,7 @@
-from enum import StrEnum
+from enum import Enum
 
 
-class DataType(StrEnum):
+class DataType(Enum):
     """The different types of data that can be organized."""
 
     classes = "classes"
