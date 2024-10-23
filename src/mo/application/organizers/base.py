@@ -1,8 +1,8 @@
 import logging
 from abc import abstractmethod
 from collections import defaultdict
+from collections.abc import Callable, Collection, Iterable
 from pathlib import Path
-from typing import Callable, Collection, Iterable
 from uuid import UUID
 
 from pydantic import UUID4

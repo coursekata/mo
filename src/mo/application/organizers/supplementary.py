@@ -1,5 +1,6 @@
+from collections.abc import Collection
 from pathlib import Path
-from typing import Collection, final
+from typing import final
 from uuid import UUID
 
 from pydantic import UUID4

@@ -1,10 +1,13 @@
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from mo.application.actions import MakeDirectoryAction
 from mo.application.interfaces.organizer import IOrganizer
 from mo.application.plan import Plan
-from mo.application.use_cases.organize import OrganizeConfig, OutputDirectoryNotEmptyError
+from mo.application.use_cases.organize import (
+    OrganizeConfig,
+    OutputDirectoryNotEmptyError,
+)
 from mo.application.utils import dir_not_empty
 
 

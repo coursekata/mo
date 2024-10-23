@@ -1,7 +1,8 @@
 import copy
 import logging
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Literal
+from typing import Literal
 
 import polars as pl
 from polars import exceptions
@@ -36,7 +37,10 @@ class BaseProcessor(IProcessor):
         try:
             self.log.debug(f"Reading {input}")
             df = pl.scan_csv(
-                input, dtypes=self.input_schema, null_values=NULL_VALUES, try_parse_dates=True
+                input,
+                dtypes=self.input_schema,
+                null_values=NULL_VALUES,
+                try_parse_dates=True,
             )
             if self.exclude_columns:
                 df = df.drop(*self.exclude_columns)
@@ -66,19 +70,28 @@ class BaseProcessor(IProcessor):
         return pl.DataFrame(schema=self.input_schema).lazy()
 
     def write(
-        self, data: pl.LazyFrame | pl.DataFrame, output: Path, format: Literal["csv", "parquet"]
+        self,
+        data: pl.LazyFrame | pl.DataFrame,
+        output: Path,
+        format: Literal["csv", "parquet"],
     ) -> None:
         df = data.lazy().collect()
         df.write_csv(output) if format == "csv" else df.write_parquet(output)
 
     def merge(
-        self, source: Iterable[Path], destination: Path, format: Literal["csv", "parquet"]
+        self,
+        source: Iterable[Path],
+        destination: Path,
+        format: Literal["csv", "parquet"],
     ) -> None:
         df = self.concat(self.read(path) for path in source)
         self.write(df, destination, format)
 
     def raw_merge(
-        self, source: Iterable[Path], destination: Path, format: Literal["csv", "parquet"]
+        self,
+        source: Iterable[Path],
+        destination: Path,
+        format: Literal["csv", "parquet"],
     ) -> None:
         df = self.concat(self.raw_read(path) for path in source)
         self.write(df, destination, format)

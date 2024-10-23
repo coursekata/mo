@@ -1,6 +1,6 @@
 from abc import abstractmethod
+from collections.abc import Collection
 from pathlib import Path
-from typing import Collection
 
 from mo.application.constants import DataType
 from mo.application.plan import Plan

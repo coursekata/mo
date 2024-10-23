@@ -1,5 +1,6 @@
+from collections.abc import Callable, Collection
 from pathlib import Path
-from typing import Callable, Collection, final
+from typing import final
 from uuid import UUID
 
 from mo.application.interfaces.organizer import DataType

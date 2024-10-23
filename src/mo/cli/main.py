@@ -1,7 +1,8 @@
 import webbrowser
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Iterable, Optional
+from typing import Annotated
 
 import typer
 from rich import print
@@ -21,7 +22,11 @@ from mo.application.processors.classes import ClassesProcessor
 from mo.application.processors.responses import ResponsesProcessor
 from mo.application.use_cases.check import Check
 from mo.application.use_cases.consolidate import Consolidate
-from mo.application.use_cases.organize import Organize, OrganizeConfig, OutputDirectoryNotEmptyError
+from mo.application.use_cases.organize import (
+    Organize,
+    OrganizeConfig,
+    OutputDirectoryNotEmptyError,
+)
 from mo.cli.logging import configure_logging
 
 app = typer.Typer()
@@ -87,32 +92,39 @@ def organize(
         typer.Option("--remove", "-r", help="Delete the input data after it has been processed."),
     ] = False,
     merge: Annotated[
-        bool, typer.Option("--merge", "-m", help="Merge with any existing data in output.")
+        bool,
+        typer.Option("--merge", "-m", help="Merge with any existing data in output."),
     ] = False,
     keep_pii: Annotated[
         bool,
         typer.Option(
-            "--keep-pii", "-k", help="Keep personally identifiable information in class metadata."
+            "--keep-pii",
+            "-k",
+            help="Keep personally identifiable information in class metadata.",
         ),
     ] = False,
     dry_run: Annotated[
         bool,
         typer.Option(
-            "--dry-run", "-d", help="Don't actually do anything, just show what would happen."
+            "--dry-run",
+            "-d",
+            help="Don't actually do anything, just show what would happen.",
         ),
     ] = False,
     log_file: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--log-file", "-l", help="Write logs to a file as well as stdout."),
     ] = None,
     verbose: Annotated[
         bool,
         typer.Option(
-            "--verbose", "-v", help="Show all debug logs in addition to errors and warnings."
+            "--verbose",
+            "-v",
+            help="Show all debug logs in addition to errors and warnings.",
         ),
     ] = False,
     exclude_columns: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(
             "--exclude-columns",
             "-e",
@@ -123,7 +135,15 @@ def organize(
 ) -> None:
     """Organize your CSV download bundles."""
     config = setup_config(
-        inputs, output, remove, merge, keep_pii, dry_run, log_file, verbose, exclude_columns
+        inputs,
+        output,
+        remove,
+        merge,
+        keep_pii,
+        dry_run,
+        log_file,
+        verbose,
+        exclude_columns,
     )
     organizers = setup_organizers(config)
     try:
@@ -149,32 +169,39 @@ def consolidate(
         typer.Option("--remove", "-r", help="Delete the input data after it has been processed."),
     ] = False,
     merge: Annotated[
-        bool, typer.Option("--merge", "-m", help="Merge with any existing data in output.")
+        bool,
+        typer.Option("--merge", "-m", help="Merge with any existing data in output."),
     ] = False,
     keep_pii: Annotated[
         bool,
         typer.Option(
-            "--keep-pii", "-k", help="Keep personally identifiable information in class metadata."
+            "--keep-pii",
+            "-k",
+            help="Keep personally identifiable information in class metadata.",
         ),
     ] = False,
     dry_run: Annotated[
         bool,
         typer.Option(
-            "--dry-run", "-d", help="Don't actually do anything, just show what would happen."
+            "--dry-run",
+            "-d",
+            help="Don't actually do anything, just show what would happen.",
         ),
     ] = False,
     log_file: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--log-file", "-l", help="Write logs to a file as well as stdout."),
     ] = None,
     verbose: Annotated[
         bool,
         typer.Option(
-            "--verbose", "-v", help="Show all debug logs in addition to errors and warnings."
+            "--verbose",
+            "-v",
+            help="Show all debug logs in addition to errors and warnings.",
         ),
     ] = False,
     exclude_columns: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(
             "--exclude-columns",
             "-e",
@@ -185,7 +212,15 @@ def consolidate(
 ) -> None:
     """Consolidate and compress your CSV download bundles to parquet."""
     config = setup_config(
-        inputs, output, remove, merge, keep_pii, dry_run, log_file, verbose, exclude_columns
+        inputs,
+        output,
+        remove,
+        merge,
+        keep_pii,
+        dry_run,
+        log_file,
+        verbose,
+        exclude_columns,
     )
     organizers = setup_organizers(config)
     try:
@@ -202,7 +237,7 @@ def consolidate(
 @app.command()
 def check(
     data: Annotated[Path, typer.Argument()],
-    manifest: Annotated[Optional[Path], typer.Option("--manifest", "-m")] = None,
+    manifest: Annotated[Path | None, typer.Option("--manifest", "-m")] = None,
 ) -> None:
     """Check that data has been downloaded for all classes in the manifest."""
     manifest = Path(data, "manifest.csv") if not manifest else Path(manifest)

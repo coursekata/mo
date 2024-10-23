@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Literal
+from typing import Literal
 
 import polars as pl
 from polars.type_aliases import SchemaDict
@@ -36,19 +37,28 @@ class IProcessor(ABC):
 
     @abstractmethod
     def write(
-        self, data: pl.LazyFrame | pl.DataFrame, output: Path, format: Literal["csv", "parquet"]
+        self,
+        data: pl.LazyFrame | pl.DataFrame,
+        output: Path,
+        format: Literal["csv", "parquet"],
     ) -> None:
         """Write the data file."""
 
     @abstractmethod
     def merge(
-        self, source: Iterable[Path], destination: Path, format: Literal["csv", "parquet"]
+        self,
+        source: Iterable[Path],
+        destination: Path,
+        format: Literal["csv", "parquet"],
     ) -> None:
         """Read, clean, and merge the data files."""
 
     @abstractmethod
     def raw_merge(
-        self, source: Iterable[Path], destination: Path, format: Literal["csv", "parquet"]
+        self,
+        source: Iterable[Path],
+        destination: Path,
+        format: Literal["csv", "parquet"],
     ) -> None:
         """Merge the data files without cleaning."""
 

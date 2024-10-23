@@ -1,7 +1,8 @@
 import shutil
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable, final
+from typing import Any, final
 
 from mo.application.interfaces.processor import IProcessor
 

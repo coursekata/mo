@@ -1,5 +1,6 @@
+from collections.abc import Collection
 from pathlib import Path
-from typing import Collection, final
+from typing import final
 
 from mo.application.actions import (
     DeleteFileAction,
