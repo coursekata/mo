@@ -1,10 +1,13 @@
 """Data type schemas for the metrics package."""
 
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias, Union
 
 import polars as pl
 
-SchemaDict: TypeAlias = dict[str, pl.PolarsDataType]
+if TYPE_CHECKING:
+    from polars.datatypes import DataType, DataTypeClass
+
+SchemaDict: TypeAlias = dict[str, Union["DataTypeClass", "DataType"]]
 
 manifest: SchemaDict = {
     "class_id": pl.Utf8,
