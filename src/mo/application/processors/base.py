@@ -38,7 +38,7 @@ class BaseProcessor(IProcessor):
             self.log.debug(f"Reading {input}")
             df = pl.scan_csv(
                 input,
-                schema=self.input_schema,
+                schema_overrides=self.input_schema,
                 null_values=NULL_VALUES,
                 try_parse_dates=True,
             )
