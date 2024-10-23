@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import final
 
 import polars as pl
+from polars import exceptions
 from polars.type_aliases import FrameType
 
 from mo.application.processors import dtypes
@@ -20,20 +21,22 @@ class ResponsesProcessor(BaseProcessor):
         self.output_schema["dt_submitted"] = pl.Datetime(time_unit="us", time_zone="UTC")
 
     def raw_read(self, input: Path) -> pl.LazyFrame:
-        df = self.exclude_bad_items(super().raw_read(input))
-        df_schema = df.collect_schema()
-        # convert the `dt_submitted` column to a datetime
-        if "dt_submitted" in df.columns and df_schema["dt_submitted"] == pl.Utf8():
-            # pre-process datetimes
-            df = df.with_columns(
-                pl.col("dt_submitted")
-                .str.strip_chars()
-                .str.replace_all(" ", "T")
-                .str.replace_all(r"\+[0-9]+$", "")
-                .str.strptime(pl.Datetime(time_unit="us", time_zone="UTC"))
-            )
-
-        return df
+        try:
+            df = self.exclude_bad_items(super().raw_read(input))
+            df_schema = df.collect_schema()
+            # convert the `dt_submitted` column to a datetime
+            if "dt_submitted" in df_schema and df_schema["dt_submitted"] == pl.Utf8():
+                # pre-process datetimes
+                df = df.with_columns(
+                    pl.col("dt_submitted")
+                    .str.strip_chars()
+                    .str.replace_all(" ", "T")
+                    .str.replace_all(r"\+[0-9]+$", "")
+                    .str.strptime(pl.Datetime(time_unit="us", time_zone="UTC"))
+                )
+            return df
+        except exceptions.NoDataError:
+            return self.template_df()
 
     def exclude_bad_items(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
         exclusions = [
