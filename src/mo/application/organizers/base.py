@@ -49,7 +49,7 @@ class ClassFileOrganizer(BaseOrganizer):
         output: Path,
         path_factory: Callable[[Path, UUID, Path], Path] | None = None,
     ) -> Plan:
-        self.log.debug(f"Planning {self.data_type} organization")
+        self.log.debug(f"Planning {self.data_type.value} organization")
         path_factory = path_factory or self.make_organized_path
 
         plan = Plan()
@@ -84,10 +84,10 @@ class ClassFileOrganizer(BaseOrganizer):
 
             processed_files.add(data_file)
             if class_id not in organized_files or data_file.name not in organized_files[class_id]:
-                self.log.debug(f"Adding {self.data_type} file for {class_id}: {data_file}")
+                self.log.debug(f"Adding {self.data_type.value} file for {class_id}: {data_file}")
                 organized_files[class_id][data_file.name] = data_file
             else:
-                self.log.warning(f"Found existing {self.data_type} file for {class_id}")
+                self.log.warning(f"Found existing {self.data_type.value} file for {class_id}")
                 existing = organized_files[class_id][data_file.name]
                 self.resolve_conflict(existing, data_file)
 
@@ -97,8 +97,10 @@ class ClassFileOrganizer(BaseOrganizer):
         """Resolve a conflict between two files."""
         if existing.stat().st_mtime > new.stat().st_mtime:
             self.log.warning(f"Skipping older {new}")
+            self.log.warning(f"Keeping newer  {existing}")
             return existing
-        self.log.warning(f"Using newer {new}")
+        self.log.warning(f"Keeping newer  {new}")
+        self.log.warning(f"Skipping older {existing}")
         return new
 
 
@@ -125,9 +127,9 @@ class ClassDataFileOrganizer(ClassFileOrganizer, BaseDataFileOrganizer):
         return UUID(class_ids[0])
 
     def consolidate(self, inputs: Collection[Path], output: Path) -> Plan:
-        self.log.debug(f"Planning {self.data_type} consolidation")
+        self.log.debug(f"Planning {self.data_type.value} consolidation")
         plan = Plan()
-        output_file = output / f"{self.data_type}.parquet"
+        output_file = output / f"{self.data_type.value}.parquet"
         organized, processed = self.deduplicate(inputs)
 
         # if the output file exists, check that it can be merged with the input files
@@ -169,7 +171,7 @@ class ClassDataFileOrganizer(ClassFileOrganizer, BaseDataFileOrganizer):
 
 class DataDeleterOrganizer(BaseOrganizer):
     def organize(self, inputs: Collection[Path], output: Path) -> Plan:
-        self.log.debug(f"Planning {self.data_type} organization")
+        self.log.debug(f"Planning {self.data_type.value} organization")
         plan = Plan()
         if self.config.remove:
             for data_file in self.iter_files(inputs):

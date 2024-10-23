@@ -22,7 +22,7 @@ class ClassesOrganizer(BaseDataFileOrganizer):
     processor = ClassesProcessor()
 
     def organize(self, inputs: Collection[Path], output: Path) -> Plan:
-        self.log.debug(f"Planning {self.data_type} organization")
+        self.log.debug(f"Planning {self.data_type.value} organization")
         plan = Plan()
         output_file = output / "classes.csv"
         plan.actions.append(MergeToCSVAction(self.processor, self.iter_files(inputs), output_file))
@@ -34,7 +34,7 @@ class ClassesOrganizer(BaseDataFileOrganizer):
         return plan
 
     def consolidate(self, inputs: Collection[Path], output: Path) -> Plan:
-        self.log.debug(f"Planning {self.data_type} consolidation")
+        self.log.debug(f"Planning {self.data_type.value} consolidation")
         plan = Plan()
         output_file = output / "classes.parquet"
         inputs = list(self.iter_files(inputs))

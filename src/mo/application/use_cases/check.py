@@ -29,8 +29,8 @@ class Check:
 
         manifest_ids = (
             self.processor.read_output(self.manifest_path, "csv")
-            .filter(pl.col("class_type").is_in(class_types))
-            .filter(pl.col("status").is_in(statuses))
+            .filter(pl.col("class_type").is_in(class_types))  # type: ignore
+            .filter(pl.col("status").is_in(statuses))  # type: ignore
             .select("class_id")
             .unique()
         )

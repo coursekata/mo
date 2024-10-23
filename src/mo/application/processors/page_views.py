@@ -16,8 +16,8 @@ class PageViewsProcessor(BaseProcessor):
     def clean(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
         return (
             df.lazy()
-            .filter(pl.col("class_id").is_not_null())
-            .filter(pl.col("student_id").is_not_null())
+            .filter(pl.col("class_id").is_not_null())  # type: ignore
+            .filter(pl.col("student_id").is_not_null())  # type: ignore
             # until CCP2-2300 is resolved, this column may not be parsed correctly
             # .filter(pl.col("dt_accessed").is_not_null())
         )
