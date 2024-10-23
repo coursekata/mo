@@ -8,6 +8,7 @@ from mo.application.actions import MakeDirectoryAction
 from mo.application.config import CommonConfig
 from mo.application.organizers.base import IOrganizer
 from mo.application.plan import Plan
+from mo.application.use_cases.unzip_bundles import UnzipBundles
 from mo.application.utils import dir_not_empty
 
 
@@ -17,6 +18,9 @@ class OrganizeConfig(CommonConfig):
 
     output: Path
     """Directory where the output data should be written."""
+
+    allow_unzip: bool = False
+    """Whether to allow unzipping bundles before organizing."""
 
 
 class OutputDirectoryNotEmptyError(Exception):
@@ -59,13 +63,14 @@ class Organize:
         self.log.debug("Config:")
         self.log.debug(f"  Inputs: {self.config.inputs}")
         self.log.debug(f"  Output directory: {self.config.output}")
+        self.log.debug(f"  Allow unzip: {self.config.allow_unzip}")
         self.log.debug(f"  Remove: {self.config.remove}")
         self.log.debug(f"  Overwrite: {self.config.merge}")
         self.log.debug(f"  Strip PII: {self.config.strip_pii}")
         self.log.debug(f"  Dry run: {self.config.dry_run}")
         self.log.debug("Organizers:")
         for organizer in self.organizers:
-            self.log.debug(f"  {organizer.data_type}: `{organizer.pattern}` ({organizer})")
+            self.log.debug(f"  {organizer.data_type.value}: `{organizer.pattern}` ({organizer})")
 
         plan = Plan()
 
@@ -80,6 +85,10 @@ class Organize:
                 self.log.warning("Operation will overwrite existing files in output directory")
             self.log.info("Adding output directory to input directories for merging")
             self.config.inputs.append(self.config.output)
+
+        if self.config.allow_unzip:
+            self.log.info("Unzipping input bundles")
+            UnzipBundles(self.config.inputs).execute()
 
         self.log.info("Planning how to organize")
         for organizer in self.organizers:

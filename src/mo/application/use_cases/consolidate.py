@@ -1,4 +1,5 @@
 import logging
+import zipfile
 from collections.abc import Iterable
 
 from mo.application.actions import MakeDirectoryAction
@@ -8,6 +9,7 @@ from mo.application.use_cases.organize import (
     OrganizeConfig,
     OutputDirectoryNotEmptyError,
 )
+from mo.application.use_cases.unzip_bundles import UnzipBundles
 from mo.application.utils import dir_not_empty
 
 
@@ -35,13 +37,14 @@ class Consolidate:
         self.log.debug("Config:")
         self.log.debug(f"  Inputs: {self.config.inputs}")
         self.log.debug(f"  Output directory: {self.config.output}")
+        self.log.debug(f"  Allow unzip: {self.config.allow_unzip}")
         self.log.debug(f"  Remove: {self.config.remove}")
         self.log.debug(f"  Merge: {self.config.merge}")
         self.log.debug(f"  Strip PII: {self.config.strip_pii}")
         self.log.debug(f"  Dry run: {self.config.dry_run}")
         self.log.debug("Organizers:")
         for organizer in self.organizers:
-            self.log.debug(f"  {organizer.data_type}: `{organizer.pattern}` ({organizer})")
+            self.log.debug(f"  {organizer.data_type.value}: `{organizer.pattern}` ({organizer})")
 
         plan = Plan()
 
@@ -56,6 +59,10 @@ class Consolidate:
                 self.log.warning("Operation will merge with existing files in output directory")
             self.log.info("Adding output directory to input directories for merging")
             self.config.inputs.append(self.config.output)
+
+        if self.config.allow_unzip:
+            self.log.info("Unzipping input bundles")
+            UnzipBundles(self.config.inputs, self.config.output).execute()
 
         self.log.info("Planning how to consolidate")
         for organizer in self.organizers:

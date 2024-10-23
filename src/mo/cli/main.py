@@ -36,6 +36,7 @@ app = typer.Typer()
 def setup_config(
     inputs: list[Path],
     output: Path,
+    allow_unzip: bool,
     remove: bool,
     merge: bool,
     keep_pii: bool,
@@ -45,6 +46,8 @@ def setup_config(
     exclude_columns: list[str] | None,
 ) -> OrganizeConfig:
     config = OrganizeConfig(inputs=inputs, output=output)
+    if allow_unzip:
+        config.allow_unzip = True
     if remove:
         config.remove = True
     if merge:
@@ -88,6 +91,14 @@ def organize(
         Path,
         typer.Option("--output", "-o", help="Directory where the output data should be written."),
     ],
+    allow_unzip: Annotated[
+        bool,
+        typer.Option(
+            "--allow-unzip",
+            "-u",
+            help="Allow unzipping bundles before organizing them (ignores `--dry-run`).",
+        ),
+    ] = False,
     remove: Annotated[
         bool,
         typer.Option("--remove", "-r", help="Delete the input data after it has been processed."),
@@ -136,15 +147,16 @@ def organize(
 ) -> None:
     """Organize your CSV download bundles."""
     config = setup_config(
-        inputs,
-        output,
-        remove,
-        merge,
-        keep_pii,
-        dry_run,
-        log_file,
-        verbose,
-        exclude_columns,
+        inputs=inputs,
+        output=output,
+        allow_unzip=allow_unzip,
+        remove=remove,
+        merge=merge,
+        keep_pii=keep_pii,
+        dry_run=dry_run,
+        log_file=log_file,
+        verbose=verbose,
+        exclude_columns=exclude_columns,
     )
     organizers = setup_organizers(config)
     try:
@@ -165,6 +177,14 @@ def consolidate(
         Path,
         typer.Option("--output", "-o", help="Directory where the output data should be written."),
     ],
+    allow_unzip: Annotated[
+        bool,
+        typer.Option(
+            "--allow-unzip",
+            "-u",
+            help="Allow unzipping bundles before consolidating them (ignores `--dry-run`).",
+        ),
+    ] = False,
     remove: Annotated[
         bool,
         typer.Option("--remove", "-r", help="Delete the input data after it has been processed."),
@@ -213,15 +233,16 @@ def consolidate(
 ) -> None:
     """Consolidate and compress your CSV download bundles to parquet."""
     config = setup_config(
-        inputs,
-        output,
-        remove,
-        merge,
-        keep_pii,
-        dry_run,
-        log_file,
-        verbose,
-        exclude_columns,
+        inputs=inputs,
+        output=output,
+        allow_unzip=allow_unzip,
+        remove=remove,
+        merge=merge,
+        keep_pii=keep_pii,
+        dry_run=dry_run,
+        log_file=log_file,
+        verbose=verbose,
+        exclude_columns=exclude_columns,
     )
     organizers = setup_organizers(config)
     try:
