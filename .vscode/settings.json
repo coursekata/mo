@@ -1,15 +1,23 @@
 {
-  "[python]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "charliermarsh.ruff",
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
-    },
-    "editor.indentSize": 4,
-    "editor.rulers": [100]
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit",
+    "sourse.formatOnSave": "explicit"
   },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "python.terminal.activateEnvironment": false,
+  "python.analysis.typeCheckingMode": "strict",
   "python.analysis.diagnosticSeverityOverrides": {
-    "reportUnusedImport": "none",
-    "reportMissingTypeStubs": "information"
-  }
+    "reportMissingTypeStubs": "none",
+    "reportUnknownMemberType": "none"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.indentSize": 4,
+    "editor.rulers": [100],
+    "editor.tabSize": 4
+  },
+  "python.testing.pytestArgs": ["packages"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }
