@@ -41,6 +41,7 @@ class BaseProcessor(IProcessor):
                 schema_overrides=self.input_schema,
                 null_values=NULL_VALUES,
                 try_parse_dates=True,
+                low_memory=self.low_memory,
             )
             if self.exclude_columns:
                 df = df.drop(*self.exclude_columns)
@@ -68,7 +69,7 @@ class BaseProcessor(IProcessor):
 
     def template_df(self) -> pl.LazyFrame:
         """Create a template DataFrame."""
-        return pl.DataFrame(schema=self.input_schema).lazy()
+        return pl.DataFrame(schema_overrides=self.input_schema).lazy()
 
     def write(
         self,
@@ -98,4 +99,4 @@ class BaseProcessor(IProcessor):
         self.write(df, destination, format)
 
     def concat(self, dfs: Iterable[pl.LazyFrame | pl.DataFrame]) -> pl.LazyFrame:
-        return pl.concat((df.lazy() for df in dfs), how="diagonal").unique()
+        return pl.concat((df.lazy() for df in dfs), how="diagonal_relaxed").unique()

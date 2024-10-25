@@ -19,6 +19,9 @@ class IProcessor(ABC):
     exclude_columns: list[str]
     """Columns to exclude when reading data in."""
 
+    low_memory: bool = False
+    """Whether to read the data in low memory mode."""
+
     @abstractmethod
     def read(self, input: Path) -> pl.LazyFrame:
         """Read and clean the data file."""

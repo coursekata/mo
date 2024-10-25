@@ -19,8 +19,12 @@ class Check:
         self.processor = processor
         self.include_active = include_active
         self.include_test = include_test
+        self.include_active = include_active
+        self.include_test = include_test
 
     def execute(self) -> list[str]:
+        statuses = ["complete", "active"] if self.include_active else ["complete"]
+        class_types = ["real", "test"] if self.include_test else ["real"]
         statuses = ["complete", "active"] if self.include_active else ["complete"]
         class_types = ["real", "test"] if self.include_test else ["real"]
         existing_ids = (

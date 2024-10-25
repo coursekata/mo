@@ -68,9 +68,9 @@ def setup_config(
 
 def setup_organizers(config: OrganizeConfig) -> Iterable[IOrganizer]:
     return (
+        ResponsesOrganizer(config),
         MediaViewsOrganizer(config),
         PageViewsOrganizer(config),
-        ResponsesOrganizer(config),
         SupplementaryOrganizer(config),
         TagsOrganizer(config),
         ItemsOrganizer(config),
@@ -283,7 +283,7 @@ def check(
         if not data_file.exists():
             raise typer.BadParameter(f"{data_type.capitalize()} file not found at {data_file}")
 
-        checker = Check(manifest, data_file, processor, include_active, include_test)
+        checker = Check(manifest, data_file, processor)
         missing_data_type = checker.execute()
         missing += missing_data_type
         if not missing_data_type:

@@ -22,6 +22,7 @@ class ResponsesOrganizer(ClassDataFileOrganizer):
         path_factory: Callable[[Path, UUID, Path], Path] | None = None,
     ) -> Plan:
         if not self.config.dry_run:
+            self.processor.low_memory = True
             for data_file in self.iter_files(inputs):
                 self.processor.raw_read(data_file).collect().write_csv(data_file)
         return super().organize(inputs, output, path_factory)
@@ -29,5 +30,5 @@ class ResponsesOrganizer(ClassDataFileOrganizer):
     def consolidate(self, inputs: Collection[Path], output: Path) -> Plan:
         if not self.config.dry_run:
             for data_file in self.iter_files(inputs):
-                self.processor.raw_read(data_file).collect().write_csv(data_file)
+                self.processor.raw_read(data_file).collect(streaming=True).write_csv(data_file)
         return super().consolidate(inputs, output)

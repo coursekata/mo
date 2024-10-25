@@ -5,6 +5,7 @@ from collections.abc import Callable, Collection, Iterable
 from pathlib import Path
 from uuid import UUID
 
+from polars import exceptions
 from pydantic import UUID4
 
 from mo.application.actions import (
@@ -77,8 +78,12 @@ class ClassFileOrganizer(BaseOrganizer):
         organized_files: dict[UUID4, dict[str, Path]] = defaultdict(dict)
         for data_file in self.iter_files(inputs):
             self.log.debug(f"Organizing {data_file}")
-            class_id = self.get_class_id(data_file)
-            if not class_id:
+            try:
+                class_id = self.get_class_id(data_file)
+                if not class_id:
+                    self.log.warning(f"Could not determine class ID for {data_file}, skipping")
+                    continue
+            except exceptions.ColumnNotFoundError:
                 self.log.warning(f"Could not determine class ID for {data_file}, skipping")
                 continue
 
@@ -87,7 +92,7 @@ class ClassFileOrganizer(BaseOrganizer):
                 self.log.debug(f"Adding {self.data_type.value} file for {class_id}: {data_file}")
                 organized_files[class_id][data_file.name] = data_file
             else:
-                self.log.warning(f"Found existing {self.data_type.value} file for {class_id}")
+                self.log.debug(f"Found existing {self.data_type.value} file for {class_id}")
                 existing = organized_files[class_id][data_file.name]
                 self.resolve_conflict(existing, data_file)
 
@@ -96,11 +101,11 @@ class ClassFileOrganizer(BaseOrganizer):
     def resolve_conflict(self, existing: Path, new: Path) -> Path:
         """Resolve a conflict between two files."""
         if existing.stat().st_mtime > new.stat().st_mtime:
-            self.log.warning(f"Skipping older {new}")
-            self.log.warning(f"Keeping newer  {existing}")
+            self.log.debug(f"Skipping older {new}")
+            self.log.debug(f"Keeping newer  {existing}")
             return existing
-        self.log.warning(f"Keeping newer  {new}")
-        self.log.warning(f"Skipping older {existing}")
+        self.log.debug(f"Keeping newer  {new}")
+        self.log.debug(f"Skipping older {existing}")
         return new
 
 

@@ -1,9 +1,9 @@
+import logging
 from pathlib import Path
 from typing import final
 
 import polars as pl
 from polars import exceptions
-from polars.type_aliases import FrameType
 
 from mo.application.processors import dtypes
 from mo.application.processors.base import BaseProcessor
@@ -19,6 +19,7 @@ class ResponsesProcessor(BaseProcessor):
     def __init__(self):
         super().__init__()
         self.output_schema["dt_submitted"] = pl.Datetime(time_unit="us", time_zone="UTC")
+        self.log = logging.getLogger(__name__)
 
     def raw_read(self, input: Path) -> pl.LazyFrame:
         try:
@@ -38,7 +39,20 @@ class ResponsesProcessor(BaseProcessor):
         except exceptions.NoDataError:
             return self.template_df()
 
-    def exclude_bad_items(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
+    def clean(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
+        return (
+            df.lazy()
+            .pipe(self.exclude_bad_items)
+            .filter(  # type: ignore
+                pl.col("class_id").is_not_null(),
+                pl.col("student_id").is_not_null(),
+                pl.col("response").is_not_null(),
+            )
+            .pipe(self.map_multiple_choice)
+        )
+
+    @staticmethod
+    def exclude_bad_items(df: pl.LazyFrame) -> pl.LazyFrame:
         exclusions = [
             "89296286-f21e-4b08-a9db-2232179b27c1",
             "9ae1e478-fc9d-491e-8a61-530158b0406c",
@@ -52,50 +66,42 @@ class ResponsesProcessor(BaseProcessor):
             "e7e9185a-d414-445e-a71a-ced42e596523",
             "b2518c54-e2d3-47ff-a679-3931d2e1c0bb",
         ]
-        return df.lazy().filter(~pl.col("lrn_question_reference").is_in(exclusions))  # type: ignore
-
-    def clean(self, df: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
-        return (
-            self.exclude_bad_items(df)
-            .filter(pl.col("class_id").is_not_null())  # type: ignore
-            .filter(pl.col("student_id").is_not_null())  # type: ignore
-            .filter(pl.col("response").is_not_null())  # type: ignore
-            .pipe(self.map_multiple_choice)
-            .collect()
-            .lazy()
-        )
+        return df.filter(~pl.col("lrn_question_reference").is_in(exclusions))  # type: ignore
 
     @staticmethod
-    def map_multiple_choice(responses_df: FrameType) -> pl.LazyFrame:
+    def map_multiple_choice(df: pl.LazyFrame) -> pl.LazyFrame:
         """Map multiple-choice responses to their corresponding values."""
-        df = responses_df.lazy()
-        if "lrn_type" not in responses_df.columns or "response" not in responses_df.columns:
+        df_schema = df.collect_schema()
+        if "lrn_type" not in df_schema or "response" not in df_schema:
             return df
 
         ref = "lrn_question_reference"
         mcq_responses = (
-            df.filter(pl.col("lrn_type") == "mcq")
+            df.filter(pl.col("lrn_type") == "mcq")  # type: ignore
             .with_columns(
-                response=pl.when(pl.col("response").eq(pl.lit("")))
-                .then("[]")
+                pl.when(pl.col("response").eq(pl.lit("")))
+                .then(pl.lit("[]"))
                 .otherwise(pl.col("response"))
-                .str.json_extracts()  # type: ignore
+                .str.json_decode()
+                .alias("response")
             )
             .explode("response")
-            .with_columns(ref_opt=pl.concat_str(ref, pl.lit("lrn_option_"), "response"))
+            .with_columns(pl.concat_str(ref, pl.lit("lrn_option_"), "response").alias("ref_opt"))
             .drop("response")
         )
 
-        mcq_map = (
+        map = (
             mcq_responses.unique(ref)
-            .melt(ref)
-            .with_columns(ref_opt=pl.concat_str(ref, "variable"))
-            .filter(pl.col("value").is_not_null())
+            .unpivot(index=ref)
+            .with_columns(pl.concat_str(ref, "variable").alias("ref_opt"))
+            .filter(pl.col("value").is_not_null())  # type: ignore
             .rename({"value": "response"})
         )
 
-        mapped_mcq = (
-            mcq_responses.drop(ref).join(mcq_map, on="ref_opt", how="left").select(df.columns)
+        mapped = (
+            mcq_responses.drop(ref)
+            .join(map, on="ref_opt", how="left")
+            .select(list(df_schema.keys()))
         )
-
-        return pl.concat([mapped_mcq, df.filter(pl.col("lrn_type") != "mcq")])
+        remainder = df.filter(pl.col("lrn_type") != "mcq")  # type: ignore
+        return pl.concat([mapped, remainder])

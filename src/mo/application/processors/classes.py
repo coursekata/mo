@@ -23,11 +23,12 @@ class ClassesProcessor(BaseProcessor):
 
         return (
             df.lazy()
-            .filter(pl.col("class_id").is_not_null())
+            .filter(pl.col("class_id").is_not_null())  # type: ignore
             .rename(rename_map)
             .with_columns(
-                course=pl.when(pl.col("course") == "UCLATALL/czi-stats-course")
-                .then("Statistics and Data Science:  A Modeling Approach")
+                pl.when(pl.col("course") == "UCLATALL/czi-stats-course")
+                .then(pl.lit("Statistics and Data Science:  A Modeling Approach"))
                 .otherwise(pl.col("course"))
+                .alias("course")
             )
         )

@@ -1,5 +1,4 @@
 import logging
-import zipfile
 from collections.abc import Iterable
 
 from mo.application.actions import MakeDirectoryAction
