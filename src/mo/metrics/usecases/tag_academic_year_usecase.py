@@ -56,14 +56,14 @@ class TagAcademicYearUseCase(UseCase):
         date_col = pl.col(date_col_name)
         range(2020, date.today().year + 1)
         return (
-            df.with_columns(pl.col(dt_col_name).cast(pl.Date).alias(date_col_name))  # type: ignore # noqa: E501
+            df.with_columns(pl.col(dt_col_name).cast(pl.Date, strict=False).alias(date_col_name))
             # tag by term
             .with_columns(date_col.dt.month().alias(term_col_name))
             .with_columns(pl.col(term_col_name).cut(breaks=[7], labels=["Spring", "Fall"]))
             # tag by year
             .with_columns(
                 pl.format(
-                    "'{}-'{}",
+                    "{}-{}",
                     pl.when(pl.col(term_col_name) == "Fall")
                     .then(date_col.dt.year())
                     .otherwise(date_col.dt.year() - 1),

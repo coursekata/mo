@@ -1,10 +1,8 @@
 from collections.abc import Iterable
-from functools import reduce
 from pathlib import Path
 from typing import final
 
 import polars as pl
-import pyreadstat
 
 from mo.domain.data_format import DataFormat
 from mo.metrics.domain.config import Config
@@ -15,9 +13,7 @@ class Input(Config):
     inputs: Iterable[Path]
     output: Path
     output_format: DataFormat = DataFormat.PARQUET
-    input_formats: list[DataFormat] = [data_format for data_format in DataFormat]
-    allow_unpack: bool = False
-    remove_input: bool = False
+    filter_ids: list[str] = []
 
 
 @final
@@ -26,35 +22,68 @@ class MergeNCESUseCase(UseCase):
 
     def execute(self, input: Input) -> None:
         self.log.info("Merging NCES data")
+        input_dirs = list(input.inputs)
 
-        # include the output so that we merge with any previously consolidated data
-        input_dirs = [*input.inputs, input.output]
-
-        self.log.debug("Loading lunch data")
-        lunch_data = self._load_lunch_data(input_dirs)
-        self._write_data(lunch_data, input.output / "nces_lunch.parquet", DataFormat.PARQUET)
-
-        self.log.debug("Loading characteristics data")
-        characteristics_data = self._load_characteristics_data(input_dirs)
-        self._write_data(
-            characteristics_data, input.output / "nces_characteristics.parquet", DataFormat.PARQUET
+        self.log.debug("Merging membership data")
+        self._merge_data(
+            input_dirs,
+            "ccd_sch_052_*.csv",
+            input.output,
+            "nces-membership",
+            input.output_format,
+            input.filter_ids,
         )
 
-    def _load_lunch_data(self, input_dirs: list[Path]) -> pl.LazyFrame:
-        dfs: list[pl.DataFrame] = [
-            pl.from_pandas(pyreadstat.read_sas7bdat(target)[0])  # type: ignore
-            for input_dir in input_dirs
-            for target in input_dir.rglob("ccd_sch_033_*.sas7bdat")
-        ]
-        return reduce(lambda x, y: pl.concat([x, y], how="diagonal_relaxed"), dfs).lazy()
+        self.log.debug("Merging lunch data")
+        self._merge_data(
+            input_dirs,
+            "ccd_sch_033_*.csv",
+            input.output,
+            "nces-lunch",
+            input.output_format,
+            input.filter_ids,
+        )
 
-    def _load_characteristics_data(self, input_dirs: list[Path]) -> pl.LazyFrame:
-        dfs: list[pl.DataFrame] = [
-            pl.from_pandas(pyreadstat.read_sas7bdat(target)[0])  # type: ignore
+        self.log.debug("Merging characteristics data")
+        self._merge_data(
+            input_dirs,
+            "ccd_sch_129_*.csv",
+            input.output,
+            "nces-characteristics",
+            input.output_format,
+            input.filter_ids,
+        )
+
+    def _merge_data(
+        self,
+        input_dirs: list[Path],
+        pattern: str,
+        output_dir: Path,
+        output: str,
+        output_format: DataFormat,
+        filter_ids: list[str],
+    ) -> None:
+        dfs: list[pl.LazyFrame] = [
+            self._read_and_filter_data(target, filter_ids)
             for input_dir in input_dirs
-            for target in input_dir.rglob("ccd_sch_129_*.sas7bdat")
+            for target in input_dir.rglob(pattern, case_sensitive=False)
         ]
-        return reduce(lambda x, y: pl.concat([x, y], how="diagonal_relaxed"), dfs).lazy()
+
+        output_path = output_dir / f"{output}.{output_format.value}"
+        if output_path.exists():
+            dfs.append(pl.scan_parquet(output_path))
+
+        self._write_data(
+            pl.concat(dfs, how="diagonal_relaxed"),
+            output_path,
+            output_format,
+        )
+
+    def _read_and_filter_data(self, input: Path, filter_ids: list[str]) -> pl.LazyFrame:
+        df = pl.scan_csv(input)
+        if filter_ids:
+            return df.filter(pl.col("NCESSCH").is_in(filter_ids))
+        return df
 
     def _write_data(self, data: pl.LazyFrame, output_path: Path, output_format: DataFormat) -> None:
         self.log.debug(f"Writing data to {str(output_path)}")

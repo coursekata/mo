@@ -7,7 +7,6 @@ from mo.metrics.usecases.usecase import UseCase
 
 class Input(Config):
     data: pl.DataFrame | pl.LazyFrame
-    dt_col_name: str = "d_activity"
 
 
 class Output(BaseModel):
@@ -42,20 +41,20 @@ def extract_demographics(responses_df: pl.DataFrame | pl.LazyFrame) -> pl.LazyFr
     demographic_type = pl.col("demographic_type")
     result = (
         responses_df.lazy()
-        .filter(pl.col("dt_submitted").is_not_null())  # type: ignore
-        .filter(pl.col("prompt").is_in(prompts))  # type: ignore
+        .filter(
+            pl.col("dt_submitted").is_not_null(),
+            pl.col("prompt").is_in(prompts),
+        )
         .with_columns(
             demographic_type=pl.when(prompt.is_in(prompt_maps["gender"]))
             .then(pl.lit("gender"))
-            # .when(prompt.is_in(prompt_maps["gender_other"])).then(pl.lit("gender_other"))
             .when(prompt.is_in(prompt_maps["race"]))
             .then(pl.lit("race"))
-            # .when(prompt.is_in(prompt_maps["race_other"])).then(pl.lit("race_other"))
             .when(prompt.is_in(prompt_maps["maternal_education"]))
             .then(pl.lit("maternal_education"))
             .cast(pl.Categorical)
         )
-        .filter(demographic_type.is_not_null())  # type: ignore
+        .filter(demographic_type.is_not_null())
         .with_columns(
             response=pl.when(demographic_type == "gender")
             .then(response.replace(response_maps["gender"], default=None))
@@ -64,7 +63,7 @@ def extract_demographics(responses_df: pl.DataFrame | pl.LazyFrame) -> pl.LazyFr
             .when(demographic_type == "maternal_education")
             .then(response)
         )
-        .filter(response.is_not_null())  # type: ignore
+        .filter(response.is_not_null())
         .sort("dt_submitted")
         .unique(["student_id", "demographic_type", "response"], keep="first")
         .select(pl.col("student_id", "demographic_type", "response"))

@@ -11,7 +11,7 @@ from mo.usecases.usecase import DataReadingUseCase
 
 class Input(Config):
     input: Path
-    output: Path | None = None
+    output: Path
 
 
 @final
@@ -19,7 +19,7 @@ class ProcessResponsesUseCase(DataReadingUseCase):
     Input = Input
 
     def execute(self, input: Input) -> None:
-        input.output = input.output or input.input
+        self.log.info("Processing responses data")
         if not input.input.exists():
             raise FileNotFoundError(f"Input responses file does not exist: {input.input}")
 

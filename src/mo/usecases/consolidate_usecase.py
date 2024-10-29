@@ -6,7 +6,6 @@ from typing import final
 from mo.domain.config import Config
 from mo.domain.data_format import DataFormat
 from mo.domain.data_types import DataType
-from mo.usecases.process_responses_usecase import ProcessResponsesUseCase
 from mo.usecases.usecase import DataReadingUseCase
 
 
@@ -64,10 +63,6 @@ class ConsolidateUseCase(DataReadingUseCase):
                         target.unlink()
 
         # extra processing for specific data types
-        # clean responses
-        if DataType.RESPONSES in input.data_types:
-            ProcessResponsesUseCase().execute(ProcessResponsesUseCase.Input(input=input.output))
-
         # merge classes and manifest data
         if DataType.CLASSES in input.data_types and DataType.MANIFEST in input.data_types:
             self.log.info("Merging classes and manifest data")

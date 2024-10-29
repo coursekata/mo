@@ -61,7 +61,7 @@ SCHEMAS: dict[DataType, SchemaDict] = {
         "book": pl.Utf8,
         "branch": pl.Utf8,
         "student_id": pl.Utf8,
-        # "lms_id": pl.Utf8,
+        "lms_id": pl.Utf8,
         "item_id": pl.Utf8,
         "item_type": pl.Utf8,
         "chapter": pl.Utf8,
