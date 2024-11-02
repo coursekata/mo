@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 from mo.domain.data_types import DataType
 from mo.metrics.domain.config import Config
 from mo.metrics.usecases.usecase import UseCase
+from mo.metrics.utils import convert_mangled_dt_to_date
 
 
 class Input(Config):
@@ -43,11 +44,7 @@ class GatherActivityUseCase(UseCase):
                     value_name="dt_activity",
                 )
                 .drop("variable")
-                # convert the mangled date-time strings into dates
-                .with_columns(d_activity=pl.col("dt_activity").str.split("HH").list.get(0))
-                .with_columns(d_activity=pl.col("d_activity").str.split("T").list.get(0))
-                .with_columns(d_activity=pl.col("d_activity").str.split(" ").list.get(0))
-                .with_columns(d_activity=pl.col("d_activity").cast(pl.Date, strict=False))
+                .pipe(convert_mangled_dt_to_date, "dt_activity", "d_activity")
                 # drop the detritus
                 .drop("dt_activity")
                 .drop_nulls()

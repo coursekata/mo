@@ -30,9 +30,9 @@ def extract_demographics(responses_df: pl.DataFrame | pl.LazyFrame) -> pl.LazyFr
     """Extract demographic info from a responses data frame."""
     prompts = [
         *prompt_maps["gender"],
-        *prompt_maps["gender_other"],
+        # *prompt_maps["gender_other"],
         *prompt_maps["race"],
-        *prompt_maps["race_other"],
+        # *prompt_maps["race_other"],
         *prompt_maps["maternal_education"],
     ]
 
@@ -69,21 +69,24 @@ def extract_demographics(responses_df: pl.DataFrame | pl.LazyFrame) -> pl.LazyFr
         .select(pl.col("student_id", "demographic_type", "response"))
     )
 
-    return (
-        result.collect()
-        .pivot(
-            "demographic_type",
-            index="student_id",
-            values="response",
-            aggregate_function="first",
-            sort_columns=True,
-        )
-        .with_columns(
-            pl.col("gender").cast(pl.Categorical("lexical")),
-            pl.col("race").cast(pl.Categorical("lexical")),
-        )
-        .lazy()
+    result = result.collect().pivot(
+        "demographic_type",
+        index="student_id",
+        values="response",
+        aggregate_function="first",
+        sort_columns=True,
     )
+
+    if "gender" not in result.columns:
+        result = result.with_columns(gender=pl.lit(None))
+
+    if "race" not in result.columns:
+        result = result.with_columns(race=pl.lit(None))
+
+    return result.with_columns(
+        pl.col("gender").cast(pl.Categorical("lexical")),
+        pl.col("race").cast(pl.Categorical("lexical")),
+    ).lazy()
 
 
 prompt_maps = {

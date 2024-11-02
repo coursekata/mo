@@ -24,15 +24,23 @@ class ProcessResponsesUseCase(DataReadingUseCase):
             raise FileNotFoundError(f"Input responses file does not exist: {input.input}")
 
         self.log.info("Cleaning responses data")
-        responses = (
-            self._load_data(DataType.RESPONSES, [input.input])
-            .pipe(self._exclude_bad_items)
+        self._write_data(
+            self._load_data(DataType.RESPONSES, [input.input]).pipe(
+                ProcessResponsesUseCase.process
+            ),
+            input.output,
+            DataFormat.PARQUET,
+        )
+
+    @staticmethod
+    def process(df: pl.LazyFrame) -> pl.LazyFrame:
+        return (
+            df.pipe(ProcessResponsesUseCase._exclude_bad_items)
             .filter(pl.col("class_id").is_not_null())
             .filter(pl.col("student_id").is_not_null())
             .filter(pl.col("response").is_not_null())
-            .pipe(self._map_multiple_choice)
+            .pipe(ProcessResponsesUseCase._map_multiple_choice)
         )
-        self._write_data(responses, input.output, DataFormat.PARQUET)
 
     @staticmethod
     def _exclude_bad_items(df: pl.LazyFrame) -> pl.LazyFrame:
