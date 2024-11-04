@@ -6,6 +6,7 @@ from typing import TypeVar, final
 
 from mo.domain.data_types import DataType
 from mo.domain.file_metadata import FileMetadata, ZipFileMetadata
+from mo.domain.observer import Observable, ProgressEvent
 from mo.services.parsing import DataParsingService
 from mo.services.validation import ValidationService
 
@@ -13,7 +14,7 @@ FileMetadataType = TypeVar("FileMetadataType", bound=FileMetadata)
 
 
 @final
-class FileDiscoveryService:
+class FileDiscoveryService(Observable[ProgressEvent]):
     def __init__(
         self,
         dirs: Iterable[Path],
@@ -21,25 +22,34 @@ class FileDiscoveryService:
         validation_svc: ValidationService,
         extraction_dir: Path,
     ) -> None:
+        super().__init__()
         self.dirs = list(dirs)
         self.parser_svc = parser_svc
         self.validation_svc = validation_svc
         self.extraction_dir = extraction_dir
 
     def discover(self) -> Iterable[FileMetadata]:
+        targets = list(itertools.chain.from_iterable(dir.rglob("*") for dir in self.dirs))
+        zip_targets = list(itertools.chain.from_iterable(dir.rglob("*.zip") for dir in self.dirs))
+        total_targets = len(targets) + len(zip_targets)
+
+        progress = ProgressEvent(current=0, total=total_targets, message="Discovering files")
+        self.notify(progress)
+
         metadatas: list[FileMetadata] = []
         supplementary_dirs: list[FileMetadata] = []
-        for path in itertools.chain.from_iterable(dir.rglob("*") for dir in self.dirs):
+        for path in targets:
+            self.notify(progress.advance())
             if path.is_dir() and path.name == "supplementary":
                 # we have to wait until we have all the file metadata to properly evaluate these
                 supplementary_dirs.append(FileMetadata(path=path, type="supplementary"))
             elif path.is_file() and (processed := self.process_data_file(path)):
                 metadatas.append(processed)
 
-        extracted_files = itertools.chain.from_iterable(
-            self.process_zip_file(path)
-            for path in itertools.chain.from_iterable(dir.rglob("*.zip") for dir in self.dirs)
-        )
+        extracted_files: list[FileMetadata] = []
+        for path in zip_targets:
+            self.notify(progress.advance())
+            extracted_files.extend(self.process_zip_file(path))
 
         return itertools.chain(
             metadatas,

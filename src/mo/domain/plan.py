@@ -2,6 +2,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import final
 
+from mo.domain.observer import Observable, ProgressEvent
+
 
 class PlannedAction(ABC):
     @abstractmethod
@@ -14,8 +16,9 @@ class PlannedAction(ABC):
 
 
 @final
-class Plan:
+class Plan(Observable[ProgressEvent]):
     def __init__(self, actions: list[PlannedAction], logger: logging.Logger | None = None) -> None:
+        super().__init__()
         self.log = logger or logging.getLogger(__name__)
         self._actions: list[PlannedAction] = actions
 
@@ -24,8 +27,13 @@ class Plan:
 
     def execute(self) -> None:
         self.log.info("Executing plan")
+
+        event = ProgressEvent(current=0, total=len(self._actions), message="Executing plan")
+        self.notify(event)
+
         for action in self._actions:
             self.log.debug(action.describe())
+            self.notify(event.advance())
             action.execute()
 
     def describe(self) -> None:
