@@ -1,5 +1,6 @@
 from enum import StrEnum
-from typing import TypeAlias
+from itertools import chain
+from typing import Literal, TypeAlias
 
 import polars as pl
 from polars.datatypes import DataTypeClass
@@ -168,3 +169,6 @@ LEGACY_SCHEMAS: dict[LegacyDataType, SchemaDict] = {
         "learnosity_question_data": pl.Utf8,
     },
 }
+
+AnyData: TypeAlias = DataType | LegacyDataType | Literal["supplementary"]
+AnyDataName: list[str] = list(chain(DataType, LegacyDataType, ["supplementary"]))

@@ -10,6 +10,7 @@ from rich.logging import RichHandler
 from rich.progress import Progress, TaskID
 
 from mo.domain.observer import Observer, ProgressEvent
+from mo.usecases.compress_usecase import CompressUseCase
 from mo.usecases.organize_usecase import OrganizeUseCase
 
 app = typer.Typer()
@@ -63,8 +64,41 @@ def organize(
 
 
 @app.command()
-def process():
-    pass
+def compress(
+    inputs: Annotated[list[Path], typer.Argument(..., help="Directories to organize.")],
+    output: Annotated[
+        Path,
+        typer.Option("--output", "-o", help="Directory where the output data should be written."),
+    ],
+    move: Annotated[
+        bool,
+        typer.Option("--move", "-m", help="Delete the input files after compressing."),
+    ] = False,
+    skip_validation: Annotated[
+        bool,
+        typer.Option("--skip-validation", "-s", help="Skip validation of the input files."),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", "-d", help="Perform a dry run without affecting any files."),
+    ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-v", help="Enable verbose logging."),
+    ] = False,
+    log_file: Annotated[
+        Path | None,
+        typer.Option("--log-file", help="File to write logs to."),
+    ] = None,
+):
+    config = CompressUseCase.Input(inputs=inputs, output=output)
+    config.move = move
+    config.skip_validation = skip_validation
+    config.dry_run = dry_run
+
+    console = setup_logging(logging.DEBUG if verbose else logging.WARNING, log_file)
+    with RichProgressObserver(console) as progress_observer:
+        CompressUseCase(config, [progress_observer]).execute()
 
 
 def setup_logging(level: int | str = logging.DEBUG, log_file: Path | None = None) -> Console:
@@ -86,7 +120,7 @@ def setup_logging(level: int | str = logging.DEBUG, log_file: Path | None = None
 
 class RichProgressObserver(Observer[ProgressEvent]):
     def __init__(self, console: Console) -> None:
-        self.progress = Progress(console=console)
+        self.progress = Progress(console=console, transient=True)
         self.tasks: dict[UUID, TaskID] = {}
 
     def __enter__(self):
@@ -111,8 +145,6 @@ class RichProgressObserver(Observer[ProgressEvent]):
             )
 
         self.progress.update(self.tasks[event.task_id], completed=event.current)
-        if event.total and event.total == event.current:
-            self.progress.remove_task(self.tasks[event.task_id])
 
 
 if __name__ == "__main__":

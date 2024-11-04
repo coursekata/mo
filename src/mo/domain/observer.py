@@ -32,6 +32,7 @@ class ProgressEvent(BaseModel):
     message: str = "Processing..."
     task_id: UUID = Field(default_factory=uuid4)
 
-    def advance(self, by: int = 1) -> Self:
+    def advance(self, by: int = 1, message: str | None = None) -> Self:
+        self.message = message if message is not None else self.message
         self.current += by
         return self

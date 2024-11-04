@@ -51,11 +51,32 @@ class FileDiscoveryService(Observable[ProgressEvent]):
             self.notify(progress.advance())
             extracted_files.extend(self.process_zip_file(path))
 
-        return itertools.chain(
-            metadatas,
-            self.process_supplementary(supplementary_dirs, metadatas),
-            extracted_files,
+        return self.remove_duplicates_and_unidentifiables(
+            itertools.chain(
+                metadatas,
+                self.process_supplementary(supplementary_dirs, metadatas),
+                extracted_files,
+            )
         )
+
+    def remove_duplicates_and_unidentifiables(
+        self, metadatas: Iterable[FileMetadata]
+    ) -> Iterable[FileMetadata]:
+        seen: set[tuple[str, str]] = set()
+        for metadata in metadatas:
+            if metadata.type in (DataType.CLASSES, DataType.MANIFEST):
+                # these have many class IDs not one, so we don't filter them
+                yield metadata
+                continue
+
+            if not metadata.class_id:
+                # everything else must belong to a class
+                continue
+
+            key = (str(metadata.type), metadata.class_id)
+            if key not in seen:
+                seen.add(key)
+                yield metadata
 
     def process_zip_file(self, path: Path) -> Iterable[ZipFileMetadata]:
         metadatas: list[ZipFileMetadata] = []
@@ -88,7 +109,7 @@ class FileDiscoveryService(Observable[ProgressEvent]):
         return itertools.chain(metadatas, self.process_supplementary(supplementary_dirs, metadatas))
 
     def process_data_file(self, path: Path) -> FileMetadata | None:
-        if data_type := self.parser_svc.identify_type(path.name):
+        if data_type := self.parser_svc.identify_type(path):
             strategy = self.validation_svc.get_strategy(data_type)
             is_valid, class_id = strategy.validate(path)
             if is_valid:

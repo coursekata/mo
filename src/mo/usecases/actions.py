@@ -1,64 +1,12 @@
-import logging
 import shutil
-from collections.abc import Iterable
 from pathlib import Path
 
 import polars as pl
 
-from mo.domain.config import Config
-from mo.domain.data_types import DataType, LegacyDataType
+from mo.domain.data_format import DataFormat
 from mo.domain.file_metadata import FileMetadata
 from mo.domain.plan import PlannedAction
 from mo.services.parsing import DataParsingService
-
-
-class ActionFactoryConfig(Config):
-    output: Path
-    move: bool = True
-    ignore_legacy: bool = False
-    ignore_duplicates: bool = False
-
-
-class ActionFactory:
-    def __init__(self, config: ActionFactoryConfig) -> None:
-        self.config = config
-        self.log = logging.getLogger(__name__)
-
-    def make(self, file_metadata_list: Iterable[FileMetadata]) -> Iterable[PlannedAction]:
-        move, ignore_legacy = self.config.move, self.config.ignore_legacy
-
-        manifests: list[FileMetadata] = []
-        classes: list[FileMetadata] = []
-
-        for metadata in file_metadata_list:
-            if metadata.type in LegacyDataType:
-                yield IgnoreLegacyFile(metadata) if ignore_legacy else DeleteFile(metadata)
-            elif metadata.type == DataType.CLASSES:
-                manifests.append(metadata)
-            elif metadata.type == DataType.MANIFEST:
-                classes.append(metadata)
-            elif metadata.type in DataType or metadata.type == "supplementary":
-                if not metadata.class_id:
-                    self.log.warning(f"File {metadata.name} has no class ID and will be ignored.")
-                    continue
-                output = self.config.output / metadata.class_id / metadata.path.name
-                yield (
-                    MoveFile(metadata, output, self.config.ignore_duplicates)
-                    if move
-                    else CopyFile(metadata, output)
-                )
-
-        # merge manifests and classes into single files
-        for lst in [manifests, classes]:
-            if not lst:
-                continue
-            output = self.config.output / lst[0].path.name
-            if output.exists():
-                lst.append(FileMetadata(path=output, type=lst[0].type))
-            if len(lst) == 1:
-                yield MoveFile(lst[0], output) if move else CopyFile(lst[0], output)
-            elif len(lst) > 1:
-                yield MergeFiles(lst, output, "class_id")
 
 
 class MergeFiles(PlannedAction):
@@ -68,26 +16,31 @@ class MergeFiles(PlannedAction):
         output_path: Path,
         unique_by: str | list[str] | None = None,
         parser: DataParsingService | None = None,
+        output_format: DataFormat = DataFormat.CSV,
     ) -> None:
         self.metadatas = metadatas
         self.output_path = output_path
         self.parser = parser or DataParsingService()
         self.unique_by = unique_by
+        self.output_format = output_format
 
     def execute(self) -> None:
-        (
-            pl.concat(
-                [self.parser.parse(metadata.path) for metadata in self.metadatas],
-                how="diagonal_relaxed",
-            )
-            .unique(self.unique_by)
-            .collect(streaming=True)
-            .write_csv(self.output_path)
-        )
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        dfs = [self.parser.parse(metadata.path) for metadata in self.metadatas]
+        if self.output_path.exists():
+            dfs.append(self.parser.parse(self.output_path))
+
+        df = pl.concat(dfs, how="diagonal_relaxed").unique(self.unique_by)
+        if self.output_format == DataFormat.CSV:
+            df.collect(streaming=True).write_csv(self.output_path)
+        elif self.output_format == DataFormat.PARQUET:
+            df.collect(streaming=True).write_parquet(self.output_path)
+        else:
+            raise ValueError(f"Unsupported output format: {self.output_format}")
 
     def describe(self) -> str:
-        files = ", ".join(metadata.name for metadata in self.metadatas)
-        return f"Merging multiple manifest files to {str(self.output_path)}: {files}"
+        return f"Merging {len(self.metadatas)} files to {str(self.output_path)}"
 
 
 class FileActionBase(PlannedAction):

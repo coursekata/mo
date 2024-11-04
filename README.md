@@ -19,8 +19,12 @@ pip install git+https://github.com/coursekata/mo
 
 ## Usage
 
+`mo` has two main commands: `organize` and `compress`. The `organize` command is used to organize CourseKata CSV files into a tidy directory, while the `compress` command merges CSV files of the same type into a single Parquet file for each type.
+
+### Organize
+
 1. Download data from [coursekata.org](https://coursekata.org). You can download it in batches or individually, it doesn't matter.
-2. Run `mo` wherever you downloaded those data to. For example, if you downloaded the data to a directory called `raw-data` and you want to organize it into `data-organized` you would run:
+2. Run `mo organize` wherever you downloaded those data to. For example, if you downloaded the data to a directory called `raw-data` and you want to organize it into `data-organized` you would run:
 
    ```bash
    mo organize raw-data --output data-organized
@@ -32,32 +36,32 @@ pip install git+https://github.com/coursekata/mo
    mo organize raw-data1 raw-data2 raw-data3 --output data-organized
    ```
 
-`mo organize` will organize your data, checking for duplicates, and only keep the most recent files. By default, files are moved to the output directory, and any other detected CourseKata files are deleted. Care is taken to ensure that only the most up-to-date files are considered, and that the structure of these files is a perfect match to CourseKata formats. If there is any ambiguity, the file is ignored instead of being deleted. You can customize this behavior in a couple of ways:
+`mo` will organize your data, checking for duplicates, and only keep the most recent files. By default, files are moved to the output directory, and any other detected CourseKata files are deleted. Care is taken to ensure that only the most up-to-date files are considered, and that the structure of these files is a perfect match to CourseKata formats. If there is any ambiguity, the file is ignored instead of being deleted.
 
-- `--copy`: Copy files instead of moving them.
-- `--ignore-legacy`: Ignore the `tags.csv` and `items.csv` files which can be either misleading or unnecessary. By default, these files are deleted, but you can ignore them by passing this flag.
-
-For more information, run `mo organize --help`:
+For more information on how to customize the behavior, run `mo organize --help`:
 
 ```text
  Usage: mo organize [OPTIONS] INPUTS...
 
-╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────────╮
-│ *    inputs      INPUTS...  Directories to organize. [default: None] [required]                   │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────╮
-│ *  --output         -o      PATH  Directory where the output data should be written.              │
-│                                   [default: None]                                                 │
-│                                   [required]                                                      │
-│    --copy           -c            Copy the files instead of moving them.                          │
-│    --dry-run        -d            Perform a dry run without affecting any files.                  │
-│    --verbose        -v            Enable verbose logging.                                         │
-│    --ignore-legacy  -i            Ignore legacy data types when organizing.                       │
-│    --help                         Show this message and exit.                                     │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────╮
+│ *    inputs      INPUTS...  Directories to organize. [default: None] [required]               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────╮
+│ *  --output             -o      PATH  Directory where the output data should be written.      │
+│                                       [default: None]                                         │
+│                                       [required]                                              │
+│    --copy               -c            Copy the files instead of moving them.                  │
+│    --dry-run            -d            Perform a dry run without affecting any files.          │
+│    --verbose            -v            Enable verbose logging.                                 │
+│    --ignore             -i            Don't delete duplicate input files and legacy types.    │
+│    --ignore-legacy                    Don't delete legacy data types.                         │
+│    --ignore-duplicates                Don't delete duplicate input files.                     │
+│    --log-file                   PATH  File to write logs to. [default: None]                  │
+│    --help                             Show this message and exit.                             │
+╰───────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-## How It Works
+#### How It Works
 
 1. **Plan**: `mo` generates a plan based on the input directories and the output directory. This plan includes all the files that will be moved, copied, deleted, or ignored. Because of this, `mo` offers a dry-run mode that will show you the plan without actually affecting any files. The contents of the plan will include:
 
@@ -93,6 +97,59 @@ For more information, run `mo organize --help`:
      Any `classes.csv` files will be merged and moved to the output directory itself.
 
 3. **Validate**: Finally, `mo` will check the `classes.csv` for consistency with the other files. If there are any classes in the file that don't have corresponding data files, or if there are data files that don't have corresponding entries, `mo` will log a warning with the details.
+
+### Compress
+
+1. Download data from [coursekata.org](https://coursekata.org). You can download it in batches or individually, it doesn't matter.
+2. Run `mo compress` wherever you downloaded those data to. For example, if you downloaded the data to a directory called `raw-data` and you want to organize it into `data-compressed` you would run:
+
+   ```bash
+   mo compress raw-data --output data-compressed
+   ```
+
+   If your data is in a few different directories, you can pass them all in:
+
+   ```bash
+   mo compress raw-data1 raw-data2 raw-data3 --output data-compressed
+   ```
+
+Similar to `mo organize`, `mo` will look through the data, searching for valid files. Care is taken to ensure that the structure of these files is a perfect match to CourseKata formats. If there is any ambiguity, the file is ignored. After finding and validating the files, `mo` will compress them into Parquet files, one for each type of data, yielding an output directory like this:
+
+```text
+data-compressed
+├── classes.parquet
+├── media_views.parquet
+├── page_views.parquet
+├── responses.parquet
+└── supplementary
+    ├── class_1
+    │   └── file_1
+    └── class_2
+        └── file_2
+```
+
+> **Note**: You can run `mo compress` again with new data and the same output directory. `mo` will automatically detect and merge the new data with the existing data. Do note however, that if you are adding in a lot of data to an already large dataset, the process might fail. This is because `mo` only keeps unique data, which means that the data is loaded into memory and compared to the existing data. If the data is too large, it might exceed the memory limits of your machine.
+
+For more information on how to customize the behavior, run `mo compress --help`:
+
+```text
+ Usage: mo compress [OPTIONS] INPUTS...
+
+╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────╮
+│ *    inputs      INPUTS...  Directories to organize. [default: None] [required]               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────╮
+│ *  --output           -o      PATH  Directory where the output data should be written.        │
+│                                     [default: None]                                           │
+│                                     [required]                                                │
+│    --move             -m            Delete the input files after compressing.                 │
+│    --skip-validation  -s            Skip validation of the input files.                       │
+│    --dry-run          -d            Perform a dry run without affecting any files.            │
+│    --verbose          -v            Enable verbose logging.                                   │
+│    --log-file                 PATH  File to write logs to. [default: None]                    │
+│    --help                           Show this message and exit.                               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────╯
+```
 
 ## Contributing
 

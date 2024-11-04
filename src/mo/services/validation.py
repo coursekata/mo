@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import final
 
 import polars as pl
 
@@ -25,7 +24,6 @@ class ValidationStrategy(ABC):
         """
 
 
-@final
 class ValidationService:
     def __init__(self):
         self.strategies: dict[DataType | LegacyDataType, ValidationStrategy] = {
@@ -42,6 +40,16 @@ class ValidationService:
         if strategy := self.strategies.get(data_type):
             return strategy
         raise ValueError(f"No validation strategy found for file type: {data_type}")
+
+
+class DummyValidationService(ValidationService):
+    def get_strategy(self, data_type: DataType | LegacyDataType) -> ValidationStrategy:
+        return DummyValidationStrategy()
+
+
+class DummyValidationStrategy(ValidationStrategy):
+    def validate(self, file_path: Path) -> ValidationResult:
+        return True, None
 
 
 class BasicValidationStrategy(ValidationStrategy):
