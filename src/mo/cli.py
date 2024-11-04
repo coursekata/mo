@@ -1,7 +1,8 @@
+import importlib.metadata
 import logging
 from pathlib import Path
 from types import TracebackType
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 import typer
@@ -13,7 +14,27 @@ from mo.domain.observer import Observer, ProgressEvent
 from mo.usecases.compress_usecase import CompressUseCase
 from mo.usecases.organize_usecase import OrganizeUseCase
 
-app = typer.Typer()
+app = typer.Typer(
+    name=__package__,
+    help=importlib.metadata.metadata(cast(str, __package__))["Summary"],
+    no_args_is_help=True,
+)
+
+
+def version(value: bool):
+    if value:
+        print(f"{__package__} v{importlib.metadata.version(cast(str, __package__))}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: Annotated[
+        bool | None,
+        typer.Option("--version", "-v", callback=version, help="Show the version and exit."),
+    ] = None,
+):
+    return
 
 
 @app.command()
