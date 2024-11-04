@@ -18,17 +18,21 @@ class Input(Config):
 class ProcessResponsesUseCase(DataReadingUseCase):
     Input = Input
 
-    def execute(self, input: Input) -> None:
+    def __init__(self, config: Input) -> None:
+        super().__init__()
+        self.config = config
+
+    def execute(self) -> None:
         self.log.info("Processing responses data")
-        if not input.input.exists():
-            raise FileNotFoundError(f"Input responses file does not exist: {input.input}")
+        if not self.config.input.exists():
+            raise FileNotFoundError(f"Input responses file does not exist: {self.config.input}")
 
         self.log.info("Cleaning responses data")
         self._write_data(
-            self._load_data(DataType.RESPONSES, [input.input]).pipe(
+            self._load_data(DataType.RESPONSES, [self.config.input]).pipe(
                 ProcessResponsesUseCase.process
             ),
-            input.output,
+            self.config.output,
             DataFormat.PARQUET,
         )
 

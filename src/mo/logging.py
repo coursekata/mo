@@ -1,4 +1,13 @@
 import logging
+from enum import StrEnum
+
+
+class LogLevel(StrEnum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 
 class ColoredFormatter(logging.Formatter):
@@ -28,7 +37,7 @@ class ColoredFormatter(logging.Formatter):
         return f"{color}{message}{self.RESET}"
 
 
-def setup_logging(level: int | str = logging.DEBUG) -> None:
+def setup_logging(level: int | str = logging.DEBUG) -> logging.Logger:
     logger = logging.getLogger()
     logger.setLevel(level)
 
@@ -48,3 +57,5 @@ def setup_logging(level: int | str = logging.DEBUG) -> None:
 
     # Add handler to the logger
     logger.addHandler(handler)
+
+    return logger
