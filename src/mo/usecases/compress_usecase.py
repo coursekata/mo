@@ -13,7 +13,7 @@ from mo.domain.observer import Observer, ProgressEvent
 from mo.domain.plan import Plan, PlannedAction
 from mo.services.file_discovery import FileDiscoveryService
 from mo.services.parsing import DataParsingService
-from mo.services.validation import DummyValidationService, ValidationService
+from mo.services.validation import FastValidationService, ValidationService
 from mo.usecases.actions import CopyFile, DeleteFile, MergeFiles, MoveFile
 from mo.usecases.usecase import UseCase
 
@@ -50,7 +50,7 @@ class CompressUseCase(UseCase):
         discovery_service = FileDiscoveryService(
             self.config.inputs,
             DataParsingService(),
-            DummyValidationService() if self.config.skip_validation else ValidationService(),
+            FastValidationService() if self.config.skip_validation else ValidationService(),
             extraction_directory,
         )
         discovery_service.register(self.observers)

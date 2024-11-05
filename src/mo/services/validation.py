@@ -42,14 +42,9 @@ class ValidationService:
         raise ValueError(f"No validation strategy found for file type: {data_type}")
 
 
-class DummyValidationService(ValidationService):
+class FastValidationService(ValidationService):
     def get_strategy(self, data_type: DataType | LegacyDataType) -> ValidationStrategy:
-        return DummyValidationStrategy()
-
-
-class DummyValidationStrategy(ValidationStrategy):
-    def validate(self, file_path: Path) -> ValidationResult:
-        return True, None
+        return FastValidationStrategy(data_type=data_type)
 
 
 class BasicValidationStrategy(ValidationStrategy):
@@ -91,3 +86,28 @@ class InteractionDataValidationStrategy(BasicValidationStrategy):
             return True, class_id
         except pl.exceptions.NoDataError:
             return True, None  # Empty file is considered valid
+
+
+class FastValidationStrategy(ValidationStrategy):
+    def __init__(
+        self,
+        data_type: DataType | LegacyDataType,
+        parser: DataParsingService | None = None,
+    ) -> None:
+        self.parser = parser or DataParsingService()
+        self.schema = self.parser.get_schema(data_type)
+
+    def validate(self, file_path: Path) -> ValidationResult:
+        try:
+            return True, (
+                pl.scan_csv(file_path, schema_overrides=self.schema)
+                .select("class_id")
+                .head(50)
+                .drop_nulls()
+                .first()
+                .collect()
+                .get_column("class_id")
+                .cast(str)[0]
+            )
+        except Exception:
+            return False, None
