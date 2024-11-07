@@ -1,4 +1,5 @@
 import shutil
+import tempfile
 from pathlib import Path
 
 import polars as pl
@@ -31,13 +32,20 @@ class MergeFiles(PlannedAction):
         if self.output_path.exists():
             dfs.append(self.parser.parse(self.output_path))
 
-        df = pl.concat(dfs, how="diagonal_relaxed").unique(self.unique_by)
-        if self.output_format == DataFormat.CSV:
-            df.collect(streaming=True).write_csv(self.output_path)
-        elif self.output_format == DataFormat.PARQUET:
-            df.collect(streaming=True).write_parquet(self.output_path)
-        else:
-            raise ValueError(f"Unsupported output format: {self.output_format}")
+        # when the dataset is very large, we run out of memory checking for uniques. a trick to get
+        # around this is to write the whole dataset to disk, read the unique values in, then write
+        # the unique values back to disk. because parquet will take up less disk space, we write
+        # the whole dataset to parquet first, then read that and write to the requested format.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir) / "temp.parquet"
+            pl.concat(dfs, how="diagonal_relaxed").collect(streaming=True).write_parquet(temp)
+            df = pl.scan_parquet(temp).unique(self.unique_by)
+            if self.output_format == DataFormat.CSV:
+                df.collect(streaming=True).write_csv(self.output_path)
+            elif self.output_format == DataFormat.PARQUET:
+                df.collect(streaming=True).write_parquet(self.output_path)
+            else:
+                raise ValueError(f"Unsupported output format: {self.output_format}")
 
     def describe(self) -> str:
         return f"Merging {len(self.metadatas)} files to {str(self.output_path)}"
