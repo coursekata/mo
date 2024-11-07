@@ -90,7 +90,7 @@ class CompressUseCase(UseCase):
                 yield from merge_and_delete(
                     data_type,
                     metadata_list,
-                    ["student_id", "lrn_question_reference", "dt_submitted"],
+                    ["student_id", "item_id", "lrn_question_position", "dt_submitted"],
                 )
             elif data_type in {DataType.PAGE_VIEWS}:
                 yield from merge_and_delete(
