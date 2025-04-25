@@ -1,6 +1,6 @@
 [project]
 name = "mo"
-version = "0.4.1"
+version = "0.4.2"
 description = "Methodically organize CourseKata Data."
 authors = [{ name = "Adam Blake", email = "adam@coursekata.org" }]
 license = "MIT"
